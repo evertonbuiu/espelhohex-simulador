@@ -1,16 +1,16 @@
 {
-  "versao": "2.8",
-  "notas": "Peças reais no 3D: rótula RC lateral com pino deitado na orelha da placa, haste centrada, eletrônica, conectores e cabos apoiados na base.",
+  "versao": "2.9",
+  "notas": "Corrigido o download do STL das peças; chassi exportado já apoiado na mesa.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "6f2ec1c2ecc2ec2ba88403d4dd4ea2fb8a2e02178e9c8ce7c7c96f4d4ee157fa",
+      "sha256": "a4c4209efa25c61d7959e73c31fc9756c74750c78cffefa057064ca649d428b9",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "74ab328ebf1fd960bbc5e3f4812c5580f62591d4d31b8e15590e3f58cba393e7",
-      "tamanho": 128349
+      "sha256": "b4e1d7af7989959eb7a7817ba319a50341f801500b2554c02a2c2dc8a281786e",
+      "tamanho": 128541
     }
   }
 }

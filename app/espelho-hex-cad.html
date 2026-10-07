@@ -1753,7 +1753,7 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
   function partObject(id) {
     const g = new THREE.Group();
     const add = geoms => geoms.forEach(gg => g.add(new THREE.Mesh(gg)));
-    if (id === "chassi") add(chassiGeoms());
+    if (id === "chassi") add(chassiGeoms().map(gg => gg.translate(0, 0, P.BASE_ESP)));   // fundo da base em z = 0 (na mesa)
     if (id === "placa_espelho") add(placaGeoms());
     if (id === "braco_trelica") add(bracoGeoms());
     if (id === "haste") add(hasteGeoms());
@@ -1774,7 +1774,8 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
   }
   $("#b-stl").addEventListener("click", async () => {
     const zip = new JSZip(), ex = new THREE.STLExporter();
-    PARTS.forEach(p => zip.file(`${p.id}.stl`, ex.parse(partObject(p.id), { binary: true })));
+    // o STLExporter binário devolve um DataView; o JSZip precisa do ArrayBuffer
+    PARTS.forEach(p => { const v = ex.parse(partObject(p.id), { binary: true }); zip.file(`${p.id}.stl`, v.buffer || v); });
     zip.file("LEIA-ME.txt", readme());
     await saveZip("espelhohex-pecas-stl.zip", zip);
   });
