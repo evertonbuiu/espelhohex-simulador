@@ -1,16 +1,16 @@
 {
-  "versao": "2.9",
-  "notas": "Corrigido o download do STL das peças; chassi exportado já apoiado na mesa.",
+  "versao": "3.0",
+  "notas": "Módulo menor: chassi de 250 mm de ponta a ponta (216,5 entre faces), espelho de 200 mm, braço de 90 mm e haste de 70 mm, uma chave de união por lado.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "a4c4209efa25c61d7959e73c31fc9756c74750c78cffefa057064ca649d428b9",
+      "sha256": "b877a6d09a6c711b06b215d2b8a2647f0dff091d08e22ba07af1f3b95395b710",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "b4e1d7af7989959eb7a7817ba319a50341f801500b2554c02a2c2dc8a281786e",
-      "tamanho": 128541
+      "sha256": "f15ee2e55735ff0a425a5bde7f501f1f1445c0fe5ee78abeff7ead40e42adbb0",
+      "tamanho": 130408
     }
   }
 }
