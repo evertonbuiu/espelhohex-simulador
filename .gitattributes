@@ -1,0 +1,3 @@
+# Sem conversão de quebras de linha: os arquivos ficam idênticos em qualquer
+# sistema, para o SHA-256 do atualizacao.json bater com o que os apps baixam.
+* -text
