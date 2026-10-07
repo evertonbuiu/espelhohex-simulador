@@ -7,8 +7,8 @@ dos módulos reais (ArtPoll, ArtAddress e RDM).
 
 ## Baixar
 
-O instalador `.exe` para Windows 10/11 sai na aba **Actions** (em *Artifacts*)
-a cada envio, e em **Releases** quando há uma tag de versão.
+Baixe o instalador `.exe` para Windows 10/11 na página de
+[**Releases**](https://github.com/evertonbuiu/espelhohex-simulador/releases/latest).
 
 ## Atualização online
 

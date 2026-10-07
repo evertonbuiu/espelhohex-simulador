@@ -1,7 +1,7 @@
 # Compila o instalador .exe numa máquina Windows do GitHub.
 # Roda a cada push e quando você clica em "Run workflow" na aba Actions.
-# Ao criar uma tag (ex.: v2.3), o .exe também é publicado em Releases.
-# Na branch main, também atualiza o atualizacao.json (atualização online dos apps).
+# Na branch main: atualiza o atualizacao.json (atualização online dos apps) e
+# publica o .exe em Releases, com a tag v<APP_VERSION> de app/simulador.py.
 name: Instalador Windows
 
 on:
@@ -46,8 +46,23 @@ jobs:
           name: EspelhoHex-Simulador-Setup
           path: saida/*.exe
 
+      - name: Versão do app
+        id: versao
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path app/simulador.py -Pattern '^APP_VERSION\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          "versao=$v" >> $env:GITHUB_OUTPUT
+
       - name: Publicar na Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.versao.outputs.versao }}
+          name: EspelhoHex Simulador ${{ steps.versao.outputs.versao }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          overwrite_files: true
+          body: |
+            Instalador para Windows 10/11 (64 bits). Baixe o .exe abaixo e execute.
+            Quem já tem o app instalado recebe esta versão sozinho pela atualização online.
           files: saida/*.exe
