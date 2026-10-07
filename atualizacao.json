@@ -1,0 +1,16 @@
+{
+  "versao": "2.3",
+  "notas": "Primeira versão com atualização online.",
+  "arquivos": {
+    "simulador.py": {
+      "url": "app/simulador.py",
+      "sha256": "ad351c6762f612af19942a792c5c3ab71ff1ad5c706b3790f548df8e99f06ab2",
+      "tamanho": 37602
+    },
+    "espelho-hex-cad.html": {
+      "url": "app/espelho-hex-cad.html",
+      "sha256": "5c841bd7158c08643b4e9eb269be19e0af28bc0a99c01bd0c1082566f9804b42",
+      "tamanho": 121653
+    }
+  }
+}

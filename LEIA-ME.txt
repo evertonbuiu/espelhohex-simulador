@@ -1,0 +1,57 @@
+ESPELHOHEX SIMULADOR - KIT PARA GERAR O INSTALADOR .EXE
+=======================================================
+
+Este kit gera um instalador .exe tradicional (Inno Setup), em português:
+assistente de instalação, atalhos no Menu Iniciar e na Área de Trabalho,
+desinstalador em Configurações > Aplicativos e liberação automática do
+Art-Net no firewall do Windows. O instalador gerado funciona sem internet:
+já leva dentro um Python próprio e a biblioteca 3D.
+
+OPÇÃO 1 - GERAR NO SEU COMPUTADOR (Windows 10/11)
+1. Descompacte este .zip numa pasta.
+2. Dê dois cliques em "Compilar-Instalador.bat".
+   - Se o Inno Setup não estiver instalado, o script instala pelo winget
+     (ou instale à mão: https://jrsoftware.org/isdl.php).
+   - Ele baixa o Python e a biblioteca 3D (precisa de internet só agora).
+3. O instalador aparece em:  saida\EspelhoHex-Simulador-Setup-2.3.exe
+   Esse .exe pode ser copiado para qualquer PC com Windows 10/11 (64 bits).
+
+OPÇÃO 2 - GERAR PELO GITHUB (sem instalar nada)
+1. Crie um repositório no GitHub e envie o conteúdo desta pasta
+   (inclusive a pasta oculta .github).
+2. Na aba Actions, o fluxo "Instalador Windows" roda sozinho.
+   Quando terminar, o .exe fica em "Artifacts" na página da execução.
+3. Crie uma tag (ex.: v2.3) para o .exe ir também para Releases.
+
+AO INSTALAR
+- O Windows pode mostrar "O Windows protegeu o computador" porque o .exe
+  não tem assinatura digital: clique em "Mais informações" > "Executar
+  assim mesmo".
+- O instalador pede permissão de administrador (para instalar em
+  Arquivos de Programas e liberar o Art-Net no firewall).
+
+ATUALIZAÇÃO ONLINE (sem desinstalar)
+O app procura versão nova ao abrir e a cada 6 horas, quando tem internet.
+Se houver, baixa só o que mudou (simulador e página 3D, ~150 KB), confere
+cada arquivo (SHA-256), troca e reinicia sozinho. A janela continua aberta,
+a configuração da parede é mantida, e se a versão nova não abrir, o app
+volta sozinho para a anterior.
+
+Como funciona por dentro:
+- O app consulta o endereço do "atualizacao.json" (aba Parede >
+  Atualizações). O endereço de fábrica fica em app/canal.txt.
+- Os arquivos novos vão para %LOCALAPPDATA%\EspelhoHex\app; não precisa
+  de administrador.
+
+Para publicar uma versão nova (no repositório do GitHub):
+1. Altere app/simulador.py e/ou app/espelho-hex-cad.html.
+2. Aumente APP_VERSION em app/simulador.py (ex.: "2.3" -> "2.4").
+3. Envie para a branch main. O GitHub gera o atualizacao.json sozinho
+   (ou rode: python gerar_atualizacao.py "o que mudou").
+Na primeira vez, grave o canal com o endereço do seu repositório:
+   python gerar_atualizacao.py --canal https://raw.githubusercontent.com/USUARIO/REPO/main/atualizacao.json
+e gere o .exe de novo, para os apps já saírem de fábrica com ele.
+O repositório precisa ser público para os apps conseguirem ler.
+
+ONDE FICAM OS DADOS
+Configuração da parede e log: %LOCALAPPDATA%\EspelhoHex

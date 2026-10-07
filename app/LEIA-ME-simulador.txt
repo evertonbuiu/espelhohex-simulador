@@ -1,0 +1,33 @@
+SIMULADOR ESPELHOHEX
+====================
+
+Faz este computador se comportar como uma parede de módulos EspelhoHex, para
+testar a mesa de luz antes de ter o hardware. Usa a mesma lógica do firmware:
+- cada módulo virtual aparece para a mesa como um nó Art-Net (ArtPoll);
+- lê os canais a partir do seu endereço (4 ou 7 canais), como o módulo real;
+- aceita endereçamento remoto por ArtAddress e RDM (ex.: DMX-Workshop).
+
+COMO USAR
+1. Instale o Python 3 (https://www.python.org/downloads/).
+   No Windows, marque "Add Python to PATH" na instalação.
+2. Dê dois cliques em:
+   - Windows: iniciar-simulador.bat
+   - Mac:     iniciar-simulador.command  (na primeira vez: botão direito > Abrir)
+   Se o firewall perguntar, permita o acesso em redes privadas.
+3. O navegador abre http://localhost:8080 com o EspelhoHex CAD.
+   Vá na aba "Ao vivo".
+4. Na mesa, mande Art-Net para o IP deste computador (aparece na aba e no
+   terminal) ou em broadcast. Universo 0, módulo 1 no canal 1, módulo 2 no 5...
+
+OPÇÕES (no terminal)
+  python simulador.py --modulos 7        quantidade de módulos (1, 7, 19...)
+  python simulador.py --porta-http 8081  outra porta para a página
+
+PROBLEMAS COMUNS
+- "porta 6454 ocupada": feche outros programas de Art-Net neste computador
+  (QLC+, Resolume, MadMapper). Só um programa por vez recebe Art-Net.
+- A mesa não enxerga os módulos: confira se a mesa e o computador estão na
+  mesma faixa de IP (ex.: 2.0.0.x com máscara 255.0.0.0, ou 192.168.0.x).
+- A página precisa de internet para carregar a parte 3D.
+
+Os arquivos espelho-hex-cad.html e simulador.py precisam ficar na mesma pasta.
