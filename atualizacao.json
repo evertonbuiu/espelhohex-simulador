@@ -1,16 +1,16 @@
 {
-  "versao": "2.3",
-  "notas": "Primeira versão com atualização online.",
+  "versao": "2.4",
+  "notas": "Links de compra voltaram a ser buscas no Mercado Livre e no AliExpress.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "ad351c6762f612af19942a792c5c3ab71ff1ad5c706b3790f548df8e99f06ab2",
+      "sha256": "7b06b54020d43fd896608d1ace0ce147c5544f1fb9d04bf5007b6997d5e5f206",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "5c841bd7158c08643b4e9eb269be19e0af28bc0a99c01bd0c1082566f9804b42",
-      "tamanho": 121653
+      "sha256": "3ffc1aaae05ab6ad3898f370198861860fd75697134577f3bb58322526ae3faa",
+      "tamanho": 121761
     }
   }
 }

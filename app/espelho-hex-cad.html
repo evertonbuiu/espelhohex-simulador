@@ -248,7 +248,7 @@ select.sel { font: 12.5px var(--font-ui); width: 100%; padding: 5px; border: 1px
         <p class="note">Desde 13/05/2026, pedidos de até US$ 50 em lojas do Remessa Conforme pagam só o ICMS. Acima disso, há 60% de imposto federal (com dedução de US$ 20) mais ICMS. Dividir em pedidos menores sai mais barato.</p>
         <div class="btns"><button class="btn primary" id="b-csv">Exportar CSV</button><button class="btn" id="b-prices">Voltar aos preços estimados</button></div>
         <h3>Lista de materiais</h3>
-        <p class="note">Cada link abre o produto escolhido para o projeto. Preços unitários estimados em outubro de 2026; troque pelo valor do anúncio e o total se atualiza. Na página do servo, escolha a variação de 12 V.</p>
+        <p class="note">Os links abrem a busca em cada loja, já que anúncios e preços mudam. Preços unitários estimados em outubro de 2026; troque pelo valor que você encontrar e o total se atualiza. No servo, confira se é a versão de 12 V.</p>
         <div class="scroll-x"><table class="data" id="bom"></table></div>
       </section>
 
@@ -1540,37 +1540,35 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
   const ref = (l, u) => ({ l, u });
   // [item, qtd (função de n módulos), origem, preço unit., moeda, obs., tipo 3D, links]
   const perMod = q => n => q * n;
-  const AE = id => ({ l: "AliExpress", u: "https://pt.aliexpress.com/item/" + id + ".html" });
-  const MLp = u => ({ l: "Mercado Livre", u });
-  const KIT = AE("1005004900674081"), NYLOC = AE("32798773566");
+  // links de busca (Mercado Livre e AliExpress), como antes: anúncios mudam e somem
   const BOM = [
-    ["Servo Waveshare ST3215 12 V (= Feetech STS3215, 30 kg·cm)", perMod(3), "ali", 21, "USD", "loja oficial Waveshare; escolha a variação 12 V", "servo", [AE("1005006574183029")]],
-    ["WT32-ETH01 (ESP32 + Ethernet)", perMod(1), "ali", 9, "USD", "", "wt32", [AE("1005006583793993")]],
-    ["Waveshare Bus Servo Adapter (A)", perMod(1), "ali", 5, "USD", "jumper A; RX→RX, TX→TX", "adaptador", [AE("1005012794471621")]],
-    ["Conversor MP1584EN 12→5 V", perMod(1), "ali", 0.8, "USD", "pacote com 5", "mp1584", [AE("1005003476049405")]],
-    ["Rótula RC M3 plástica com parafuso", perMod(3), "ali", 0.4, "USD", "pacote com 10; escolha M3", "rotula", [AE("32878321408")]],
-    ["Inserto M3 × 5 × 4 (rosca quente)", perMod(3), "ali", 0.03, "USD", "pacote com 100", "", [AE("1005002897983868")]],
-    ["Barra roscada M3 × 20 mm inox", perMod(3), "ali", 0.3, "USD", "escolha M3 e comprimento 20 mm", "barra_m3", [AE("1005006119440276")]],
-    ["Parafuso M3 × 20 + porca autotravante M3", perMod(3), "ali", 0.15, "USD", "parafuso do kit + porca autotravante", "parafuso_dobradica", [KIT, NYLOC]],
-    ["Parafuso M3 × 10", perMod(6), "ali", 0.05, "USD", "do mesmo kit", "parafuso_tampa", [KIT]],
-    ["Parafusos do disco do servo", perMod(15), "ali", 0, "USD", "vêm com o servo", "parafuso_disco", []],
-    ["Conector XT30 Amass (par)", perMod(2), "ali", 0.35, "USD", "10 pares; loja Amass", "xt30", [AE("1005007135124374")]],
-    ["Porta-fusível de lâmina + fusível 5 A", perMod(1), "ali", 0.6, "USD", "5 porta-fusíveis; fusível 5 A em loja de auto peças", "fusivel", [AE("1005003769125917")]],
-    ["Parafuso M4 × 12 + porca M4", perMod(12), "ali", 0.1, "USD", "do mesmo kit (M2 a M5, inox 304)", "parafuso_m4", [KIT]],
-    ["Adaptador USB-serial CP2102 (3,3 V)", () => 1, "ali", 2, "USD", "para gravar o WT32; só 1", "", [AE("1005006574813748")]],
-    ["Espelho acrílico 3 mm, hexágono 300 mm", perMod(1), "br", 30, "BRL", "chapa espelhada prata, cortada em serviço de laser local", "espelho", [MLp("https://lista.mercadolivre.com.br/chapa-acrilico-espelhado-3mm")]],
-    ["Filamento PETG Voolt3D 1 kg preto", n => Math.ceil(n * 0.62), "br", 100, "BRL", "~0,62 kg por módulo", "", [MLp("https://www.mercadolivre.com.br/voolt3d-filamento-petg-1kg-cor-preto/p/MLB31002299")]],
-    ["Fonte chaveada 12 V 30 A (S360-12)", n => Math.ceil(n * 2 / 30), "br", 150, "BRL", "~2 A por módulo", "", [MLp("https://www.mercadolivre.com.br/fonte-chaveada-12v-30a-360w-s360-12-cftv-bivolt/p/MLB37237507")]],
-    ["Switch TP-Link LS1005 (5 portas, dentro do módulo)", perMod(1), "br", 60, "BRL", "entrada e saída de rede de cada módulo", "ls1005", [MLp("https://www.mercadolivre.com.br/switch-tp-link-5-portas-ls1005/p/MLB15543985")]],
-    ["Plugue P4 macho com rabicho", perMod(1), "br", 3, "BRL", "liga o switch nos 5 V do MP1584", "", [MLp("https://lista.mercadolivre.com.br/plug-p4-macho-com-rabicho")]],
-    ["Cabo 12 V 1,5 mm² (m)", n => Math.ceil(n * 0.6), "br", 4, "BRL", "vermelho + preto, loja de material elétrico", "cabo_12v", [MLp("https://lista.mercadolivre.com.br/cabo-paralelo-1,5mm-vermelho-preto")]],
-    ["Cabo de rede Cat5e 30–50 cm", perMod(2), "br", 7, "BRL", "um até o WT32, um até o próximo módulo", "cabo_rede", [MLp("https://lista.mercadolivre.com.br/cabo-de-rede-cat5e-50cm")]],
-    ["Parafuso de fixação com bucha", perMod(3), "br", 0.5, "BRL", "loja de ferragens", "parafuso_fixacao", []]
+    ["Servo Feetech STS3215 12 V (30 kg·cm)", perMod(3), "ali", 21, "USD", "confira que é a versão 12 V (C018 / ST3215)", "servo", [ali("feetech sts3215 12v"), ml("servo sts3215"), ref("Waveshare", "https://www.waveshare.com/st3215-servo.htm")]],
+    ["WT32-ETH01 (ESP32 + Ethernet)", perMod(1), "ali", 9, "USD", "", "wt32", [ali("wt32-eth01"), ml("wt32 eth01")]],
+    ["Adaptador do barramento (Waveshare Bus Servo Adapter A)", perMod(1), "ali", 5, "USD", "jumper A; RX→RX, TX→TX", "adaptador", [ali("waveshare bus servo adapter"), ref("Waveshare", "https://www.waveshare.com/bus-servo-adapter-a.htm")]],
+    ["Conversor MP1584 12→5 V", perMod(1), "ali", 0.8, "USD", "vende em lotes", "mp1584", [ali("mp1584en"), ml("mp1584 step down")]],
+    ["Rótula RC M3 (esfera + copo plástico)", perMod(3), "ali", 0.4, "USD", "kits de 10", "rotula", [ali("rc ball link m3"), ml("terminal rotula m3 aeromodelo")]],
+    ["Inserto metálico M3 (rosca quente)", perMod(3), "ali", 0.03, "USD", "pacote de 100", "", [ali("heat set insert m3"), ml("inserto rosca m3 impressao 3d")]],
+    ["Barra roscada M3 (20 mm) + porca M3", perMod(3), "ali", 0.3, "USD", "", "barra_m3", [ali("m3 threaded rod stainless"), ml("barra roscada m3 inox")]],
+    ["Parafuso M3 × 20 + porca autotravante", perMod(3), "ali", 0.15, "USD", "dobradiças", "parafuso_dobradica", [ali("m3 socket screw kit"), ml("parafuso allen m3 x 20 inox")]],
+    ["Parafuso M3 × 10", perMod(6), "ali", 0.05, "USD", "tampas", "parafuso_tampa", [ali("m3x10 socket screw"), ml("parafuso allen m3 x 10 inox")]],
+    ["Parafusos do disco do servo", perMod(15), "ali", 0, "USD", "vêm com o servo", "parafuso_disco", [ali("m2 screw kit")]],
+    ["Conector XT30 (par)", perMod(2), "ali", 0.35, "USD", "lotes de 10 pares", "xt30", [ali("xt30 connector"), ml("conector xt30 par")]],
+    ["Fusível 5 A + porta-fusível de linha", perMod(1), "ali", 0.6, "USD", "", "fusivel", [ali("inline blade fuse holder"), ml("porta fusivel de linha lamina")]],
+    ["Parafuso M4 × 12 + porca", perMod(12), "ali", 0.1, "USD", "união com vizinhos (média)", "parafuso_m4", [ali("m4x12 socket screw"), ml("parafuso allen m4 x 12 inox")]],
+    ["Adaptador USB-serial 3,3 V (CP2102)", () => 1, "ali", 2, "USD", "para gravar o WT32; só 1", "", [ali("cp2102 usb ttl"), ml("conversor usb serial cp2102")]],
+    ["Espelho acrílico 3 mm, hexágono 300 mm", perMod(1), "br", 30, "BRL", "corte a laser em serviço local", "espelho", [ml("acrilico espelhado 3mm"), ml("corte a laser acrilico")]],
+    ["Filamento PETG (kg)", n => Math.ceil(n * 0.62), "br", 100, "BRL", "~0,62 kg por módulo", "", [ml("filamento petg 1kg"), ali("petg filament 1kg")]],
+    ["Fonte chaveada 12 V 30 A", n => Math.ceil(n * 2 / 30), "br", 150, "BRL", "~2 A por módulo", "", [ml("fonte chaveada 12v 30a"), ali("12v 30a power supply")]],
+    ["Switch de rede 5 portas (dentro do módulo)", perMod(1), "br", 60, "BRL", "ex.: TP-Link LS1005; entrada e saída de rede", "ls1005", [ml("switch 5 portas tp-link ls1005"), ali("5 port ethernet switch")]],
+    ["Plugue P4 macho com rabicho", perMod(1), "br", 3, "BRL", "liga o switch nos 5 V do MP1584", "", [ml("plug p4 macho com rabicho"), ali("dc 5.5x2.1 male pigtail")]],
+    ["Cabo 12 V 1,5 mm² (m)", n => Math.ceil(n * 0.6), "br", 4, "BRL", "vermelho + preto", "cabo_12v", [ml("cabo paralelo 1,5mm vermelho preto")]],
+    ["Cabo de rede Cat5e 30–50 cm", perMod(2), "br", 7, "BRL", "um até o WT32, um até o próximo módulo", "cabo_rede", [ml("cabo de rede cat5e 50cm"), ali("cat6 patch cable 0.5m")]],
+    ["Parafuso de fixação com bucha", perMod(3), "br", 0.5, "BRL", "", "parafuso_fixacao", [ml("parafuso bucha 6 kit")]]
   ];
   const DEFAULT_PRICES = BOM.map(r => r[3]);
-  try { const sp = JSON.parse(localStorage.getItem("espelhohex-precos-v2") || "null"); if (sp && sp.length === BOM.length) sp.forEach((v, i) => { if (isFinite(v)) BOM[i][3] = v; }); } catch (e) { /* ignora */ }
-  const savePrices = () => { try { localStorage.setItem("espelhohex-precos-v2", JSON.stringify(BOM.map(r => r[3]))); } catch (e) { /* ignora */ } };
-  const links = arr => arr.length ? arr.map((x, i) => `<a href="${x.u}" target="_blank" rel="noopener">${i === 0 ? "Comprar" : "Porca"} · ${x.l}</a>`).join("<br>") : `<span class="sub">já incluso / loja local</span>`;
+  try { const sp = JSON.parse(localStorage.getItem("espelhohex-precos-v3") || "null"); if (sp && sp.length === BOM.length) sp.forEach((v, i) => { if (isFinite(v)) BOM[i][3] = v; }); } catch (e) { /* ignora */ }
+  const savePrices = () => { try { localStorage.setItem("espelhohex-precos-v3", JSON.stringify(BOM.map(r => r[3]))); } catch (e) { /* ignora */ } };
+  const links = arr => arr.map(x => `<a href="${x.u}" target="_blank" rel="noopener">${x.l}</a>`).join(" · ");
   const brl = v => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   function costModel() {
@@ -1624,9 +1622,10 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
   const num = (v, d = 2) => v.toFixed(d).replace(".", ",");
   $("#b-csv").addEventListener("click", async () => {
     const c = costModel();
-    const lines = [["Item", "Qtd por módulo", "Qtd total", "Loja", "Preço unitário", "Moeda", "Subtotal (R$, com impostos)", "Link de compra", "Link extra", "Observação"]];
+    const lines = [["Item", "Qtd por módulo", "Qtd total", "Origem", "Preço unitário", "Moeda", "Subtotal (R$, com impostos)", "Link AliExpress", "Link Mercado Livre", "Observação"]];
     c.rows.forEach((r, i) => {
-      lines.push([r.item, BOM[i][1](1), r.qtd, r.lk[0] ? r.lk[0].l : (r.orig === "ali" ? "AliExpress" : "Brasil"), num(r.price), r.cur, num(r.total), r.lk[0] ? r.lk[0].u : "", r.lk[1] ? r.lk[1].u : "", r.note]);
+      const a = r.lk.find(x => x.l === "AliExpress"), m = r.lk.find(x => x.l === "Mercado Livre");
+      lines.push([r.item, BOM[i][1](1), r.qtd, r.orig === "ali" ? "AliExpress (importado)" : "Brasil", num(r.price), r.cur, num(r.total), a ? a.u : "", m ? m.u : "", r.note]);
     });
     lines.push([]);
     lines.push(["Importados com impostos", "", "", "", "", "", num(c.impTotal)]);
