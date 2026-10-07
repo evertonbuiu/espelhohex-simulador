@@ -4,7 +4,7 @@
 ;  biblioteca 3D para a pasta "build" antes de chamar o Inno Setup).
 ; =====================================================================
 #define AppName "EspelhoHex Simulador"
-#define AppVersion "2.7"
+#define AppVersion "2.8"
 
 [Setup]
 AppId={{8C6F4B2E-5A1D-4F3B-9E2C-7D41A6B0E5F1}

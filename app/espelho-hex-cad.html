@@ -416,8 +416,8 @@ const DEFAULTS = {
   BASE_ESP: 3, PAREDE_ESP: 3, PAREDE_ALT: 50,
   SERVO_C: 45.2, SERVO_L: 24.7, SERVO_A: 35, SERVO_EIXO: 12, SERVO_FACE_DISCO: 6,
   BRACO_ESP: 8, BRACO_RAIZ: 30, BRACO_PONTA: 12, DISCO_FURO_R: 7, DISCO_FURO_D: 2.6, DISCO_N_FUROS: 4,
-  HASTE_ESP: 6, COPO_CENTRO: 12,
-  PLACA_RECUO: 5, PLACA_ESP: 2, NERVURA: 6, PLACA_Z: 10, PINO_ALTURA: 6, FURO_PINO: 4,
+  HASTE_ESP: 6, COPO_CENTRO: 18,
+  PLACA_RECUO: 5, PLACA_ESP: 2, NERVURA: 6, PLACA_Z: 10,
   FOLGA: 0.3, BERCO_PAREDE: 3
 };
 
@@ -518,7 +518,7 @@ function checkEnvelope(P) {
     poses.push({ tx: P.TILT_MAX * 0.5 * Math.cos(a), ty: P.TILT_MAX * 0.5 * Math.sin(a), dz: -P.PISTON_MAX * 0.5 });
   }
   poses.push({ tx: 0, ty: 0, dz: P.PISTON_MAX }, { tx: 0, ty: 0, dz: -P.PISTON_MAX });
-  const W = { reach: true, phi: 0, top: 0, edge: 1e9, bulge: 0, tip: 1e9 };
+  const W = { reach: true, phi: 0, top: 0, edge: 1e9, bulge: 0, tip: 1e9, ball: 0 };
   const half = P.ESPELHO_FACES / 2, corner = half * 2 / Math.sqrt(3);
   for (const pose of poses) {
     const r = inverse(P, pose);
@@ -532,6 +532,10 @@ function checkEnvelope(P) {
       W.tip = Math.min(W.tip, H[2] - P.BRACO_PONTA / 2);
       const rod = [balls[i][0] - H[0], balls[i][1] - H[1], balls[i][2] - H[2]], L = Math.hypot(...rod);
       W.top = Math.max(W.top, Math.acos(Math.min(1, Math.abs(rod[0] * nrm[0] + rod[1] * nrm[1] + rod[2] * nrm[2]) / L)) / DEG);
+      // rótula RC lateral: o pino fica na direção n da perna (preso na orelha da placa) e o copo gira em volta dele;
+      // o que limita é o quanto o pino inclina em relação ao copo, que a dobradiça mantém alinhado com n
+      const Rn = [0, 1, 2].map(rr => R[rr][0] * G.n[0] + R[rr][1] * G.n[1]);
+      W.ball = Math.max(W.ball, Math.acos(Math.min(1, Rn[0] * G.n[0] + Rn[1] * G.n[1])) / DEG);
     }
     for (let k = 0; k < 6; k++) {
       const a = (60 * k + 30) * DEG;
@@ -560,8 +564,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
 
   // ---------- parâmetros (com memória local deste navegador) ----------
   let P = { ...DEFAULTS };
-  try { const s = JSON.parse(localStorage.getItem("espelhohex-params-v26") || "null"); if (s) P = { ...DEFAULTS, ...s }; } catch (e) { /* sem armazenamento */ }
-  const saveParams = () => { try { localStorage.setItem("espelhohex-params-v26", JSON.stringify(P)); } catch (e) { /* ignora */ } };
+  try { const s = JSON.parse(localStorage.getItem("espelhohex-params-v28") || "null"); if (s) P = { ...DEFAULTS, ...s }; } catch (e) { /* sem armazenamento */ }
+  const saveParams = () => { try { localStorage.setItem("espelhohex-params-v28", JSON.stringify(P)); } catch (e) { /* ignora */ } };
 
   const PARAM_GROUPS = [
     ["Espelho e módulo", [
@@ -595,7 +599,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
 
   const PARTS = [
     { id: "chassi", nome: "Chassi", qtd: 1, mat: "PETG", imp: "4 paredes, 25–30% gyroid, base na mesa" },
-    { id: "placa_espelho", nome: "Placa do espelho", qtd: 1, mat: "PETG", imp: "face lisa na mesa; insertos M3 nos 3 ressaltos" },
+    { id: "placa_espelho", nome: "Placa do espelho", qtd: 1, mat: "PETG", imp: "face lisa na mesa; as 3 orelhas das rótulas saem em pé (sem suporte)" },
     { id: "braco_trelica", nome: "Braço em treliça", qtd: 3, mat: "PETG ou PLA+", imp: "deitado, 4 paredes, 40%" },
     { id: "haste", nome: "Haste", qtd: 3, mat: "PETG", imp: "deitada, 100% ou 6 paredes; porca M3 encaixa por cima" },
     { id: "tampa_servo", nome: "Tampa do servo", qtd: 3, mat: "qualquer", imp: "plana, 3 paredes" },
@@ -682,6 +686,12 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
       }
     }
     out.push(extrude(base, -P.BASE_ESP, P.BASE_ESP, 24));
+    // pezinhos de 2 mm sob as placas com pinos soldados embaixo (a abraçadeira passa por fora deles)
+    for (const [k, L, W] of [["wt32", 55, 23.5], ["adaptador", 32, 22], ["mp1584", 22, 17]])
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+        const c = localToModule(k, sx * (L / 2 - 3), sy * (W / 2 - 3), 0);
+        out.push(cylZ(c.x, c.y, 0, 2.2, 2, 16));
+      }
     // ressaltos dos parafusos
     for (const a of PARAF_ANG) {
       const s = circleShape(PARAF_R * Math.cos(a * DEG), PARAF_R * Math.sin(a * DEG), 7);
@@ -826,15 +836,30 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     return g;
   }
 
+  // ---------- orelhas das rótulas (referencial do espelho: centro das esferas em z = 0) ----------
+  // O pino da rótula RC fica deitado, na direção n da perna (paralelo ao eixo do servo): assim o copo gira
+  // livre em volta do pino quando a haste balança no plano do braço, e só a inclinação do espelho para o lado
+  // pesa no ângulo da rótula. Medidas reais: pino M3 com esfera de 5,8 mm, flange de 2 mm a 5,5 mm do centro.
+  const ROT = { ESFERA: 5.8, FLANGE0: 5.5, FLANGE1: 7.5, OREL0: 7.5, OREL1: 12.5, PORCA1: 16.5, R_OREL: 6.5, MEIA_LARG: 9 };
+  function orelhaGeoms() {
+    const g = [], zt = P.PLACA_Z + 0.5;   // encosta (e entra 0,5 mm) na face de trás da placa
+    for (let i = 0; i < 3; i++) {
+      const G = legFrame(P, i), t = LEGS[i] * DEG, B = [P.R_P * Math.cos(t), P.R_P * Math.sin(t)];
+      const sh = shapeFrom(convexHull(circlePts(0, 0, ROT.R_OREL, 40).concat([[-ROT.MEIA_LARG, zt], [ROT.MEIA_LARG, zt], [-ROT.MEIA_LARG, 2], [ROT.MEIA_LARG, 2]])));
+      sh.holes.push(circlePath(0, 0, 1.65));
+      const e = extrude(sh, 0, ROT.OREL1 - ROT.OREL0, 32);
+      const w = new THREE.Vector3(G.w[0], G.w[1], 0), nn = new THREE.Vector3(-G.n[0], -G.n[1], 0);
+      e.applyMatrix4(new THREE.Matrix4().makeBasis(w, new THREE.Vector3(0, 0, 1), nn).setPosition(B[0] + G.n[0] * ROT.OREL1, B[1] + G.n[1] * ROT.OREL1, 0));
+      g.push(e);
+    }
+    return g;
+  }
+
   // ---------- placa do espelho (face lisa em z = 0) ----------
   function placaGeoms() {
     const F = P.ESPELHO_FACES - 2 * P.PLACA_RECUO, g = [];
-    const pe = P.PLACA_ESP, nz = pe + P.NERVURA, topo = pe + P.PLACA_Z - P.PINO_ALTURA;
-    const bosses = LEGS.map(a => [P.R_P * Math.cos(a * DEG), P.R_P * Math.sin(a * DEG)]);
-    g.push(extrude(shapeFrom(hexPts(F)), 0, 0.8));
-    const upper = shapeFrom(hexPts(F));
-    for (const b of bosses) upper.holes.push(circlePath(b[0], b[1], P.FURO_PINO / 2));
-    g.push(extrude(upper, 0.8, pe - 0.8));
+    const pe = P.PLACA_ESP, nz = pe + P.NERVURA;
+    g.push(extrude(shapeFrom(hexPts(F)), 0, pe));
     const rim = shapeFrom(hexPts(F)); rim.holes.push(pathFrom(hexPts(F - 16).reverse()));
     g.push(extrude(rim, pe, P.NERVURA, 6));
     // raios até os cantos, interrompidos em volta dos ressaltos
@@ -858,10 +883,10 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     }
     g.push(extrude(ringShape(70, 64), pe, P.NERVURA, 64));
     g.push(extrude(circleShape(0, 0, 20), pe, P.NERVURA, 32));
-    for (const b of bosses) {
-      const s = circleShape(b[0], b[1], 7); s.holes.push(circlePath(b[0], b[1], P.FURO_PINO / 2));
-      g.push(extrude(s, pe, topo - pe));
-    }
+    // orelhas das rótulas: montadas no referencial do espelho (esfera em z = 0) e levadas para o
+    // referencial de impressão da placa (face lisa em z = 0, virada) pela inversa da montagem
+    const toPrint = new THREE.Matrix4().makeRotationY(Math.PI).multiply(new THREE.Matrix4().makeTranslation(0, 0, -(P.PLACA_Z + P.PLACA_ESP)));
+    for (const og of orelhaGeoms()) { og.applyMatrix4(toPrint); g.push(og); }
     return g;
   }
 
@@ -920,12 +945,12 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
 
   const HW_INFO = {
     servo: ["Servo Feetech STS3215 12 V", "3 por módulo · 45,2 × 24,7 × 35 mm · 30 kg·cm · barramento serial 1 Mbps, posição de 0 a 4095. Compre a versão de 12 V."],
-    rotula: ["Rótula RC M3 (esfera e pino)", "3 por módulo · esfera de ~6,8 mm com pino roscado M3 e flange sextavada, rosqueada no inserto da placa."],
-    copo: ["Copo da rótula RC", "3 por módulo · copo plástico que abraça a esfera, rosqueado na barra M3 da haste. A rosca ajusta o comprimento."],
+    rotula: ["Pino de rótula M3 (esfera 5,8 mm)", "3 por módulo · deitado, na direção do eixo do servo · atravessa a orelha da placa e trava com porca M3 autotravante."],
+    copo: ["Terminal de rótula RC M3 (copo plástico)", "3 por módulo · olhal que abraça a esfera de lado e corpo com rosca M3 na barra da haste. Gire o terminal para deixar o furo do olhal alinhado com o pino; a rosca ajusta o comprimento."],
     parafuso_dobradica: ["Parafuso M3 × 20 + porca autotravante", "3 por módulo · eixo da dobradiça entre braço e haste. Aperte sem travar o giro."],
     parafuso_disco: ["Parafusos do disco do servo", "4 por braço + 1 central · prendem o braço no disco metálico. Tamanho conforme o disco que vem com o servo."],
     parafuso_tampa: ["Parafuso M3 × 10", "6 por módulo · prendem as tampas dos servos nos berços."],
-    barra_m3: ["Barra roscada M3 × 20 + porca M3", "3 por módulo · a porca fica no encaixe da haste; a barra recebe o copo da rótula."],
+    barra_m3: ["Barra roscada M3 × 25 + porca M3", "3 por módulo · a porca fica no encaixe da haste; a barra recebe o terminal da rótula."],
     wt32: ["WT32-ETH01", "1 por módulo · ESP32 com Ethernet LAN8720 · 55 × 23,5 mm · recebe Art-Net e comanda os servos. Presa com abraçadeiras."],
     adaptador: ["Adaptador half-duplex do barramento", "1 por módulo · converte TX/RX do WT32 para o fio único dos servos e distribui os 12 V."],
     mp1584: ["Conversor MP1584 12→5 V", "1 por módulo · 22 × 17 mm · alimenta o WT32 e o switch (~0,9 A no total). Ajuste para 5,0 V antes de ligar."],
@@ -981,25 +1006,31 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     TPL.parafuso_disco = comp("parafuso_disco", discParts);
 
     // dobradiça (referencial da haste: x ao longo, origem no furo)
-    const ya = D.FD, yr = P.HASTE_ESP / 2;
+    const ya = D.FD, yr = 4;   // face de fora da haste (a haste fica de y = -2 a 4, cabeça centrada no plano do braço)
     TPL.parafuso_dobradica = comp("parafuso_dobradica", [
       [cylY(2.75, yr, yr + 3), "blackOxide"], [cylY(1.5, ya - 4, yr), "steel"], [hexNutY(5.5, ya - 4, ya), "steel"]
     ]);
-    // barra roscada + porca no encaixe + copo da rótula
-    const Lp = P.HASTE - P.COPO_CENTRO, yc = -1;
+    // barra roscada M3 × 25 (porca presa no encaixe da haste) + terminal de rótula RC rosqueado nela
+    const Lp = P.HASTE - P.COPO_CENTRO, H = P.HASTE;
     TPL.barra_m3 = comp("barra_m3", [
-      [at(cylX(1.5, Lp - 15, P.HASTE - 6, 12), 0, yc, 0), "steel"],
-      [at((() => { const g = new THREE.CylinderGeometry(3.2, 3.2, 2.4, 6); g.rotateZ(-Math.PI / 2); return g; })(), Lp - 7, yc, 0), "steel"]
+      [cylX(1.5, Lp - 15, Lp + 10, 12), "steel"],
+      [at((() => { const g = new THREE.CylinderGeometry(3.2, 3.2, 2.4, 6); g.rotateZ(-Math.PI / 2); return g; })(), Lp - 7, 0, 0), "steel"]
     ]);
+    // terminal RC M3 (copo plástico): corpo com rosca fêmea ao longo da haste e olhal que abraça a esfera,
+    // com o furo na direção do eixo da dobradiça (y)
     TPL.copo = comp("copo", [
-      [at(cylX(3.2, P.HASTE - 12, P.HASTE - 6), 0, yc, 0), "blackPlastic"],
-      [at(new THREE.SphereGeometry(5, 20, 14), P.HASTE, yc, 0), "blackPlastic"]
+      [cylX(3.1, H - 15, H - 4.2, 20), "blackPlastic"],
+      [cylY(4.75, -3.4, 3.4, 28).translate(H, 0, 0), "blackPlastic"]
     ]);
-    // pino da rótula (referencial da placa: esfera em z = 0, ressalto em z = PINO_ALTURA)
-    const pin = P.PINO_ALTURA;
-    const hexZ = (af, z0, z1) => { const g = new THREE.CylinderGeometry(af / Math.sqrt(3), af / Math.sqrt(3), z1 - z0, 6); g.rotateX(Math.PI / 2); g.translate(0, 0, (z0 + z1) / 2); return g; };
+    // pino de rótula M3 (referencial próprio: esfera na origem, eixo +y em direção à orelha)
+    const hexY = (af, y0, y1) => hexNutY(af, y0, y1);
     TPL.rotula = comp("rotula", [
-      [new THREE.SphereGeometry(3.4, 20, 14), "steel"], [cylZ(0, 0, 1.5, 1.7, pin - 3.5), "steel"], [hexZ(6, pin - 2, pin), "steel"]
+      [new THREE.SphereGeometry(ROT.ESFERA / 2, 24, 16), "steel"],
+      [cylY(1.7, 2, ROT.FLANGE0, 16), "steel"],
+      [hexY(5.5, ROT.FLANGE0, ROT.FLANGE1), "steel"],
+      [cylY(1.45, ROT.FLANGE1, ROT.PORCA1 + 1, 12), "steel"],
+      [hexY(5.5, ROT.OREL1, ROT.OREL1 + 2.4), "steel"],
+      [cylY(2.6, ROT.OREL1 + 2.4, ROT.PORCA1, 16), "blackPlastic"]
     ]);
     // parafusos da tampa (referencial da perna)
     const hx = P.SERVO_L / 2 + P.FOLGA + P.BERCO_PAREDE / 2;
@@ -1025,13 +1056,13 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
       [box(5, -3, 3.2, 9.5, 2, 7), "trim"], [box(-9, 3, 3.2, -6, 6, 4.2), "chip"]
     ]);
     // TP-Link LS1005: 83,6 × 45,7 × 22,8 mm, portas no lado +y local
-    const lsParts = [[box(-41.8, -22.85, 2, 41.8, 22.85, 24.8), "whitePlastic"]];
+    const lsParts = [[box(-41.8, -22.85, 0, 41.8, 22.85, 22.8), "whitePlastic"]];
     for (let i = 0; i < 5; i++) {
       const x = -30 + i * 13.5;
-      lsParts.push([box(x - 6, 22.85, 6, x + 6, 23.05, 17.5), "chip"]);
-      lsParts.push([box(x - 1, 18, 24.8, x + 1, 20, 25.1), "led"]);
+      lsParts.push([box(x - 6, 22.85, 4, x + 6, 23.05, 15.5), "chip"]);
+      lsParts.push([box(x - 1, 18, 22.8, x + 1, 20, 23.1), "led"]);
     }
-    lsParts.push([at(cylY(3.2, 22.85, 23.6, 16), 37.5, 0, 12), "blackPlastic"]);
+    lsParts.push([at(cylY(3.2, 22.85, 23.6, 16), 37.5, 0, 10), "blackPlastic"]);
     TPL.ls1005 = comp("ls1005", lsParts);
     TPL.xt30 = comp("xt30", [[box(-8, -4.3, 0, 8, 4.3, 8.6), "yellowPlastic"], [box(8, -2.5, 2, 12, 2.5, 6.6), "steel"]]);
     TPL.fusivel = comp("fusivel", [[cylX(4.5, -15, 15, 20), "blackPlastic"]]);
@@ -1062,37 +1093,47 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
 
   function buildCables() {
     const D = derived(), g = new THREE.Group(), apo = D.APO - P.PAREDE_ESP;
-    const inX = polar(apo - 9, 180, 6), outX = polar(apo - 9, 120, 6);
-    const fuse = polar(FUSE[1], FUSE[0], 6), ft = polar(15, FUSE[2], 0);
+    // todos os cabos deitados na base (ou apoiados em cima do switch), saindo dos conectores reais
+    const inX = polar(apo - 9, 180, 4.3), outX = polar(apo - 9, 120, 4.3);
+    const fuse = polar(FUSE[1], FUSE[0], 4.5), ft = polar(15, FUSE[2], 0);
     const fIn = fuse.clone().add(ft), fOut = fuse.clone().sub(ft);
-    const adPow = localToModule("adaptador", 10, 0, 6), mpIn = localToModule("mp1584", -8, 0, 4), mpOut = localToModule("mp1584", 8, 0, 4);
-    const pair = (pts, off) => pts.map(p => p.clone().add(new THREE.Vector3(0, 0, off)));
-    // 12 V: entrada (180°) → fusível → adaptador e MP1584 → saída para o vizinho (120°), passando atrás do berço 2
-    const runs12 = [[inX, fIn], [fOut, adPow], [fOut, mpIn], [fOut, polar(121, 160, 6), polar(124, 140, 6), outX]];
+    const adPow = localToModule("adaptador", 10, 0, 9), mpIn = localToModule("mp1584", -8, 0, 4), mpOut = localToModule("mp1584", 8, 0, 4);
+    const F = (v, z) => new THREE.Vector3(v.x, v.y, z);
+    const sideBy = (pts, off) => pts.map(p => p.clone().add(new THREE.Vector3(0, 0, off)));
+    // 12 V (par vermelho/preto): entrada (180°) → fusível → adaptador e MP1584 → saída para o vizinho (120°), atrás do berço 2
+    const r12 = 1.3, z12 = r12;
+    const runs12 = [
+      [inX, F(inX, z12), F(fIn, z12), fIn],
+      [fOut, F(fOut, z12), F(adPow, z12), adPow],
+      [fOut, F(fOut, z12), F(mpIn, z12), mpIn],
+      [fOut, F(fOut, z12), polar(121, 160, z12), polar(124, 140, z12), F(outX, z12), outX]];
     for (const pts of runs12) {
-      g.add(cable("cabo_12v", pair(pts, 0), 1.3, "cableRed"));
-      g.add(cable("cabo_12v", pair(pts, 2.8), 1.3, "cableBlack"));
+      g.add(cable("cabo_12v", pts, r12, "cableRed"));
+      g.add(cable("cabo_12v", sideBy(pts, 2.6), r12, "cableBlack"));
     }
-    // 5 V: MP1584 → WT32 e → switch, cruzando os braços perto da raiz (onde eles passam alto)
-    const wtPow = localToModule("wt32", 20, 12, 4), lsPow = localToModule("ls1005", 37.5, 27, 12);
-    const p5a = [mpOut, polar(55, 170, 4), polar(45, 80, 4), wtPow];
-    const p5b = [mpOut, polar(60, 180, 4), localToModule("ls1005", 42, 0, 6), lsPow];
+    // 5 V: MP1584 → WT32 e → switch, pelo chão, cruzando os braços perto da raiz (onde eles passam alto)
+    const z5 = 0.8, wtPow = localToModule("wt32", 20, 12, 4), lsPow = localToModule("ls1005", 37.5, 26, 10);
+    const p5a = [mpOut, F(mpOut, z5), polar(55, 170, z5), polar(50, 80, z5), F(wtPow, z5), wtPow];
+    const p5b = [mpOut, F(mpOut, z5), polar(60, 180, z5), F(localToModule("ls1005", 37.5, 30, 0), z5), lsPow];
     for (const pts of [p5a, p5b]) {
       g.add(cable("cabo_12v", pts, 0.8, "cableRed"));
-      g.add(cable("cabo_12v", pair(pts, 1.8), 0.8, "cableBlack"));
+      g.add(cable("cabo_12v", sideBy(pts, 1.6), 0.8, "cableBlack"));
     }
-    // barramento: adaptador → servo 2 (perna de 210°) → servo 1 (90°) → servo 3 (330°), por cima do switch
-    const con = (leg, dx) => legPoint(leg, dx, D.FS - P.SERVO_A - 6, D.ZBOT + 7);
+    // barramento: adaptador → servo 2 → servo 1 → servo 3. Sai do conector atrás do servo, desce por trás do berço
+    // e corre pela base num anel em volta do switch (raio 52, livre de berços e placas)
+    const zb = 1.6, con = (leg, dx) => legPoint(leg, dx, D.FS - P.SERVO_A - 6, D.ZBOT + 7);
+    const down = (i, dx, side) => [con(i, dx), legPoint(i, dx, D.FS - P.SERVO_A - 12, D.ZBOT), legPoint(i, 22 * side, D.FS - P.SERVO_A - 12, zb), legPoint(i, 22 * side, -30, zb)];
     const adBus = localToModule("adaptador", -10, 6, 7);
-    g.add(cable("cabo_bus", [adBus, localToModule("adaptador", -22, 6, 10), con(1, -5.5)], 1.6, "cableBus"));
-    g.add(cable("cabo_bus", [con(1, 5.5), legPoint(1, 14, -8, 32), polar(20, 60, 31), legPoint(0, 14, -8, 32), con(0, -5.5)], 1.6, "cableBus"));
-    g.add(cable("cabo_bus", [con(0, 5.5), legPoint(0, -14, -8, 32), polar(20, 300, 31), legPoint(2, 14, -8, 32), con(2, -5.5)], 1.6, "cableBus"));
-    // rede: switch no centro, portas viradas para 240° · azul = entrada (passagem de 240°) · verde = saída (passagem de 300°)
-    const port = (i, d) => localToModule("ls1005", -30 + i * 13.5, 23 + d, 11);
-    g.add(cable("cabo_rede", [port(4, 0), port(4, 18), polar(apo - 8, 240, 9), polar(D.APO + 30, 240, 9)], 2.6, "cableBlue"));
-    g.add(cable("cabo_rede", [port(0, 0), port(0, 18), polar(apo - 8, 300, 9), polar(D.APO + 30, 300, 9)], 2.6, "cableGreen"));
-    const rj = localToModule("wt32", -31, 0, 9);
-    g.add(cable("cabo_rede", [port(2, 0), port(2, 12), polar(45, 330, 8), polar(52, 20, 8), localToModule("wt32", -40, 0, 8), rj], 2.3, "cableBlue"));
+    g.add(cable("cabo_bus", [adBus, F(localToModule("adaptador", -22, 6, 0), zb), ...down(1, -5.5, 1).reverse()], 1.6, "cableBus"));
+    g.add(cable("cabo_bus", [...down(1, 5.5, -1), polar(52, 105, zb), polar(52, 75, zb), polar(52, 45, zb), ...down(0, -5.5, 1).reverse()], 1.6, "cableBus"));
+    g.add(cable("cabo_bus", [...down(0, 5.5, -1), polar(52, 335, zb), polar(52, 300, zb), ...down(2, -5.5, 1).reverse()], 1.6, "cableBus"));
+    // rede: plugues nas portas do switch (no centro), cabos deitados até as passagens de 240° (entrada) e 300° (saída)
+    const zr = 2.6, port = (i, d) => localToModule("ls1005", -30 + i * 13.5, 23 + d, 9.75);
+    const portF = (i, d) => localToModule("ls1005", -30 + i * 13.5, 23 + d, zr);
+    g.add(cable("cabo_rede", [port(4, 0), port(4, 14), portF(4, 26), polar(apo - 8, 240, zr), polar(D.APO + 30, 240, zr)], 2.6, "cableBlue"));
+    g.add(cable("cabo_rede", [port(0, 0), port(0, 14), portF(0, 26), polar(apo - 8, 300, zr), polar(D.APO + 30, 300, zr)], 2.6, "cableGreen"));
+    const rj = localToModule("wt32", -31, 0, 9.4);
+    g.add(cable("cabo_rede", [port(2, 0), port(2, 14), portF(2, 24), polar(45, 330, 2.3), polar(55, 20, 2.3), localToModule("wt32", -42, 0, 2.3), localToModule("wt32", -38, 0, 9.4), rj], 2.3, "cableBlue"));
     return g;
   }
 
@@ -1191,7 +1232,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
       arm.add(TPL.parafuso_disco.clone());
       leg.add(arm);
       const rod = new THREE.Group();
-      const rm = mesh("haste"); rm.rotation.x = Math.PI / 2; rm.position.y = P.HASTE_ESP / 2; rod.add(rm);
+      const rm = mesh("haste"); rm.rotation.x = Math.PI / 2; rm.position.y = 4; rod.add(rm);
       rod.add(TPL.parafuso_dobradica.clone(), TPL.barra_m3.clone(), TPL.copo.clone());
       leg.add(rod);
       layers.mech.add(leg);
@@ -1202,13 +1243,13 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     inner.add(mesh("placa"));
     plate.add(inner);
     const mir = mesh("espelho"); mir.position.z = P.PLACA_Z + P.PLACA_ESP; plate.add(mir);
-    LEGS.forEach(a => { const b = TPL.rotula.clone(); b.position.set(P.R_P * Math.cos(a * DEG), P.R_P * Math.sin(a * DEG), 0); plate.add(b); });
+    LEGS.forEach((a, i) => { const G = legFrame(P, i), b = TPL.rotula.clone(); b.position.set(P.R_P * Math.cos(a * DEG), P.R_P * Math.sin(a * DEG), 0); b.rotation.z = Math.atan2(G.n[1], G.n[0]) - Math.PI / 2; plate.add(b); });
     // eletrônica, conectores, fusível, cabos e parafusos de fixação
     const apo = D.APO - P.PAREDE_ESP;
     ["wt32", "ls1005", "adaptador", "mp1584"].forEach(k => layers.base.add(elecPlace(k)));
-    layers.base.add(placeStatic("xt30", polar(apo - 9, 180, 2), Math.PI));
-    layers.base.add(placeStatic("xt30", polar(apo - 9, 120, 2), 120 * DEG));
-    layers.base.add(placeStatic("fusivel", polar(FUSE[1], FUSE[0], 6), FUSE[2] * DEG));
+    layers.base.add(placeStatic("xt30", polar(apo - 9, 180, 0), Math.PI));
+    layers.base.add(placeStatic("xt30", polar(apo - 9, 120, 0), 120 * DEG));
+    layers.base.add(placeStatic("fusivel", polar(FUSE[1], FUSE[0], 4.5), FUSE[2] * DEG));
     PARAF_ANG.forEach(a => layers.base.add(placeStatic("parafuso_fixacao", polar(PARAF_R, a, 0))));
     layers.base.add(TPL.cables.clone());
     layers.top.add(plate);
@@ -1389,7 +1430,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     placa: () => ({ t: "Placa do espelho", m: `${P.ESPELHO_FACES - 2 * P.PLACA_RECUO} mm entre faces · rótulas em R ${P.R_P} mm<br>1 por módulo · face lisa na mesa` }),
     servo: () => ({ t: "Servo STS3215 12 V", m: `IDs 1, 2 e 3 · barramento serial 1 Mbps<br>eixo a ${fmt(Math.hypot(...legFrame(P, 0).S), 0)} mm do centro, z ${P.Z_B} mm · plano do braço girado ${P.BETA}°` }),
     espelho: () => ({ t: "Espelho acrílico", m: `${P.ESPELHO_FACES} mm entre faces · ${P.ESPELHO_ESP} mm · corte a laser<br>colar com fita VHB ou silicone neutro` }),
-    rotula: () => ({ t: "Rótula RC M3", m: `esfera + copo plástico · trabalha até ~32°` }),
+    rotula: () => ({ t: "Rótula RC M3", m: `pino deitado na orelha da placa + terminal plástico · inclina até ~25° para o lado` }),
     chave: () => ({ t: "Chave de união", m: `gravata borboleta impressa · desce por cima nos rasgos de dois módulos vizinhos e trava os dois sem parafuso<br>2 por lado encostado · PETG, em pé com a aba na mesa · para tirar, puxe pela aba` })
   };
   function countKind(kind) {
@@ -1521,7 +1562,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     const rows = [
       [W.reach, "Alcança todo o envelope", W.reach ? "sim" : "não"],
       [W.phi <= P.PHI_MAX, "Giro máximo dos braços", fmt(W.phi) + "°"],
-      [W.top <= 35, "Ângulo da rótula (até 35°)", fmt(W.top) + "°"],
+      [W.ball <= 30, "Inclinação da rótula lateral (até 30°)", fmt(W.ball) + "°"],
       [W.edge - P.PAREDE_ALT >= 8, "Folga borda × parede", fmt(W.edge - P.PAREDE_ALT) + " mm"],
       [W.bulge <= gap, "Borda sai para o lado (folga " + fmt(gap) + ")", fmt(W.bulge) + " mm"],
       [W.tip >= 3, "Ponta do braço × base", fmt(W.tip) + " mm"]
@@ -1576,9 +1617,9 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
     ["WT32-ETH01 (ESP32 + Ethernet)", perMod(1), "ali", 9, "USD", "", "wt32", [ali("wt32-eth01"), ml("wt32 eth01")]],
     ["Adaptador do barramento (Waveshare Bus Servo Adapter A)", perMod(1), "ali", 5, "USD", "jumper A; RX→RX, TX→TX", "adaptador", [ali("waveshare bus servo adapter"), ref("Waveshare", "https://www.waveshare.com/bus-servo-adapter-a.htm")]],
     ["Conversor MP1584 12→5 V", perMod(1), "ali", 0.8, "USD", "vende em lotes", "mp1584", [ali("mp1584en"), ml("mp1584 step down")]],
-    ["Rótula RC M3 (esfera + copo plástico)", perMod(3), "ali", 0.4, "USD", "kits de 10", "rotula", [ali("rc ball link m3"), ml("terminal rotula m3 aeromodelo")]],
-    ["Inserto metálico M3 (rosca quente)", perMod(3), "ali", 0.03, "USD", "pacote de 100", "", [ali("heat set insert m3"), ml("inserto rosca m3 impressao 3d")]],
-    ["Barra roscada M3 (20 mm) + porca M3", perMod(3), "ali", 0.3, "USD", "", "barra_m3", [ali("m3 threaded rod stainless"), ml("barra roscada m3 inox")]],
+    ["Rótula RC M3: pino com esfera 5,8 mm + terminal plástico", perMod(3), "ali", 0.4, "USD", "kits de 10; terminal com rosca M3", "rotula", [ali("rc ball link m3 5.8mm"), ml("terminal rotula m3 aeromodelo")]],
+    ["Porca M3 autotravante (pino da rótula)", perMod(3), "ali", 0.03, "USD", "pacote de 100", "", [ali("m3 nylon lock nut"), ml("porca parlock m3 inox")]],
+    ["Barra roscada M3 (25 mm) + porca M3", perMod(3), "ali", 0.3, "USD", "", "barra_m3", [ali("m3 threaded rod stainless"), ml("barra roscada m3 inox")]],
     ["Parafuso M3 × 20 + porca autotravante", perMod(3), "ali", 0.15, "USD", "dobradiças", "parafuso_dobradica", [ali("m3 socket screw kit"), ml("parafuso allen m3 x 20 inox")]],
     ["Parafuso M3 × 10", perMod(6), "ali", 0.05, "USD", "tampas", "parafuso_tampa", [ali("m3x10 socket screw"), ml("parafuso allen m3 x 10 inox")]],
     ["Parafusos do disco do servo", perMod(15), "ali", 0, "USD", "vêm com o servo", "parafuso_disco", [ali("m2 screw kit")]],

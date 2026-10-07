@@ -1,16 +1,16 @@
 {
-  "versao": "2.7",
-  "notas": "Módulos unidos por chaves impressas em gravata borboleta (sem parafusos M4).",
+  "versao": "2.8",
+  "notas": "Peças reais no 3D: rótula RC lateral com pino deitado na orelha da placa, haste centrada, eletrônica, conectores e cabos apoiados na base.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "5794e8abf0b20690991f7623c767545c2bcbf3708ece7022e9d0b47abed9a8da",
+      "sha256": "6f2ec1c2ecc2ec2ba88403d4dd4ea2fb8a2e02178e9c8ce7c7c96f4d4ee157fa",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "e0224125690f6cf4798f6d17bae48707dd40a48acc86b79095585904021ad679",
-      "tamanho": 124716
+      "sha256": "74ab328ebf1fd960bbc5e3f4812c5580f62591d4d31b8e15590e3f58cba393e7",
+      "tamanho": 128349
     }
   }
 }
