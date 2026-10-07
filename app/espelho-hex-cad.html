@@ -589,7 +589,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     tampa: { color: 0x7d8692, label: "Tampas dos servos" },
     placa: { color: 0x8ea2b9, label: "Placa do espelho" },
     rotula: { color: 0x9aa1a8, label: "Rótulas e ferragens de aço" },
-    espelho: { color: 0xffffff, label: "Espelho acrílico" }
+    espelho: { color: 0xffffff, label: "Espelho acrílico" },
+    chave: { color: 0x3a9a95, label: "Chaves de união entre módulos" }
   };
 
   const PARTS = [
@@ -597,8 +598,11 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     { id: "placa_espelho", nome: "Placa do espelho", qtd: 1, mat: "PETG", imp: "face lisa na mesa; insertos M3 nos 3 ressaltos" },
     { id: "braco_trelica", nome: "Braço em treliça", qtd: 3, mat: "PETG ou PLA+", imp: "deitado, 4 paredes, 40%" },
     { id: "haste", nome: "Haste", qtd: 3, mat: "PETG", imp: "deitada, 100% ou 6 paredes; porca M3 encaixa por cima" },
-    { id: "tampa_servo", nome: "Tampa do servo", qtd: 3, mat: "qualquer", imp: "plana, 3 paredes" }
+    { id: "tampa_servo", nome: "Tampa do servo", qtd: 3, mat: "qualquer", imp: "plana, 3 paredes" },
+    { id: "chave_uniao", nome: "Chave de união (encaixe)", qtd: 6, mat: "PETG", imp: "em pé, aba na mesa, 100%; 2 por lado encostado (média de 6 por módulo)" }
   ];
+  // chave de união em "gravata borboleta": desce por cima em dois meios rasgos de módulos vizinhos
+  const CH = { POS: 60, GARG: 8, LARG: 14, PROF: 8, ALT: 25, ABA: 1.6, FOLGA: 0.15, RP: 12, RL: 24 };
 
   // ===================================================================
   //  Geometria (Z para cima, mm) — espelha o arquivo OpenSCAD
@@ -684,18 +688,33 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
       s.holes.push(circlePath(PARAF_R * Math.cos(a * DEG), PARAF_R * Math.sin(a * DEG), 2.5));
       out.push(extrude(s, 0, 2));
     }
-    // paredes: 6 lâminas com furos M4 e rebaixo para cabos + cantos
+    // paredes: 6 lâminas com rebaixo para cabos, rasgos das chaves de união e cantos
     const T = P.PAREDE_ESP, H = P.PAREDE_ALT, Li = (P.PASSO - 2 * T) / Math.sqrt(3);
     for (let k = 0; k < 6; k++) {
       const a = 60 * k * DEG, n = new THREE.Vector3(Math.cos(a), Math.sin(a), 0), td = new THREE.Vector3(-Math.sin(a), Math.cos(a), 0);
       const notchW = 15, notchH = 18;
-      const wall = shapeFrom([[-Li / 2, 0], [-notchW, 0], [-notchW, notchH], [notchW, notchH], [notchW, 0], [Li / 2, 0], [Li / 2, H], [-Li / 2, H]]);
-      for (const t of [-60, 60]) for (const z of [H * 0.3, H * 0.76]) if (Math.abs(t) < Li / 2 - 5) wall.holes.push(circlePath(t, z, 2.2));
+      // rasgo das chaves cortado no topo da lâmina (largura do rabo de andorinha no meio da parede)
+      const wn = (CH.GARG / 2 + CH.FOLGA) + (CH.LARG - CH.GARG) / 2 * (T / 2) / CH.PROF, zr = H - CH.ALT;
+      const wall = shapeFrom([[-Li / 2, 0], [-notchW, 0], [-notchW, notchH], [notchW, notchH], [notchW, 0], [Li / 2, 0], [Li / 2, H],
+        [CH.POS + wn, H], [CH.POS + wn, zr], [CH.POS - wn, zr], [CH.POS - wn, H],
+        [-CH.POS + wn, H], [-CH.POS + wn, zr], [-CH.POS - wn, zr], [-CH.POS - wn, H], [-Li / 2, H]]);
       const g = extrude(wall, 0, T, 20);
       const m = new THREE.Matrix4().makeBasis(td, new THREE.Vector3(0, 0, 1), n);
       m.setPosition(n.clone().multiplyScalar(D.APO - T));
       g.applyMatrix4(m);
       out.push(g);
+      // reforços com o meio rasgo da chave (aberto para fora e por cima)
+      const hw = sv => (CH.GARG / 2 + CH.FOLGA) + (CH.LARG - CH.GARG) / 2 * sv / CH.PROF;
+      const xy = (sv, u) => [n.x * (D.APO - sv) + td.x * u, n.y * (D.APO - sv) + td.y * u];
+      const s0 = T - 0.5, s1 = CH.RP, h2 = CH.RL / 2;
+      for (const t of [-CH.POS, CH.POS]) {
+        // base a 45° (imprime sem suporte) + 2 mm cheios embaixo do rasgo
+        const wedge = extrude(shapeFrom([[s0, zr - 2 - (s1 - s0)], [s1, zr - 2], [s1, zr], [s0, zr]]), 0, CH.RL, 2);
+        wedge.applyMatrix4(new THREE.Matrix4().makeBasis(n.clone().negate(), new THREE.Vector3(0, 0, 1), td).setPosition(n.x * D.APO + td.x * (t - h2), n.y * D.APO + td.y * (t - h2), 0));
+        out.push(wedge);
+        out.push(extrude(shapeFrom([[s0, -h2], [s1, -h2], [s1, h2], [s0, h2], [s0, hw(s0)], [CH.PROF + CH.FOLGA, hw(CH.PROF + CH.FOLGA)],
+          [CH.PROF + CH.FOLGA, -hw(CH.PROF + CH.FOLGA)], [s0, -hw(s0)]].map(([sv, u]) => xy(sv, t + u))), zr, CH.ALT, 4));
+      }
       // canto entre a lâmina k e k+1
       const a2 = 60 * (k + 1) * DEG, n2 = [Math.cos(a2), Math.sin(a2)], td2 = [-Math.sin(a2), Math.cos(a2)];
       const Ek = [n.x * D.APO + td.x * Li / 2, n.y * D.APO + td.y * Li / 2];
@@ -732,6 +751,15 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     g.push(box(px0, py1, zf, px0 + 1.5 + F, yo1, zt));
     g.push(box(px1 - 1.5 - F, py1, zf, px1, yo1, zt));
     g.push(box(px0 + 1.5 + F, py1, zf, px1 - 1.5 - F, yo1, D.ZBOT + 4));
+    return g;
+  }
+
+  // ---------- chave de união (x atravessa a emenda, z = 0 no fundo do rasgo, aba em cima) ----------
+  function chaveGeoms() {
+    const D = CH.PROF, Wn = CH.GARG, Ww = CH.LARG, g = [];
+    g.push(extrude(shapeFrom([[-D, -Ww / 2], [0, -Wn / 2], [D, -Ww / 2], [D, Ww / 2], [0, Wn / 2], [-D, Ww / 2]]), 0.5, CH.ALT - 0.5, 4));
+    g.push(box(-D - 2, -Ww / 2 - 1, CH.ALT, D + 2, Ww / 2 + 1, CH.ALT + CH.ABA));
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) g.push(cylZ(sx * D / 2, sy * (Wn + Ww) / 4, 3.5, 0.4, CH.ALT - 8, 12));
     return g;
   }
 
@@ -907,8 +935,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     cabo_bus: ["Cabo do barramento dos servos", "3 vias, vem com o servo · liga adaptador → servo → servo → servo."],
     cabo_rede: ["Cabos de rede", "azul: entrada (do módulo anterior ou do computador, pela passagem de 240°) e o curto até o WT32 · verde: saída para o próximo módulo (passagem de 300°). Cat5e, 30 a 50 cm."],
     ls1005: ["Switch TP-Link LS1005", "1 por módulo · 5 portas 10/100 · 83,6 × 45,7 × 22,8 mm · 5 V 0,6 A pelo MP1584 · no centro do módulo (livre com os servos na periferia), portas viradas para a passagem de 240°. Qualquer porta serve: uma para a entrada, uma para a saída e uma para o WT32."],
-    parafuso_fixacao: ["Parafuso de fixação na parede", "3 por módulo · Ø 4 a 4,5 mm, com bucha ou direto no painel."],
-    parafuso_m4: ["Parafuso M4 × 12 + porca", "4 por lado encostado · une os chassis vizinhos pelos furos das paredes."]
+    parafuso_fixacao: ["Parafuso de fixação na parede", "3 por módulo · Ø 4 a 4,5 mm, com bucha ou direto no painel."]
   };
 
   const cylY = (r, y0, y1, seg = 24) => { const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg); g.translate(0, (y0 + y1) / 2, 0); return g; };
@@ -1009,10 +1036,6 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     TPL.xt30 = comp("xt30", [[box(-8, -4.3, 0, 8, 4.3, 8.6), "yellowPlastic"], [box(8, -2.5, 2, 12, 2.5, 6.6), "steel"]]);
     TPL.fusivel = comp("fusivel", [[cylX(4.5, -15, 15, 20), "blackPlastic"]]);
     TPL.parafuso_fixacao = comp("parafuso_fixacao", [[cylZ(0, 0, 2, 4.5, 2.6), "steel"], [cylZ(0, 0, 4.6, 1.2, 0.8), "blackOxide"]]);
-    TPL.parafuso_m4 = comp("parafuso_m4", [
-      [cylX(3.5, -6.5, -3, 20), "steel"], [cylX(2, -3, 9, 12), "steel"],
-      [(() => { const g = new THREE.CylinderGeometry(7 / Math.sqrt(3), 7 / Math.sqrt(3), 3.2, 6); g.rotateZ(-Math.PI / 2); g.translate(5.6, 0, 0); return g; })(), "steel"]
-    ]);
   }
 
   // posições da eletrônica no módulo
@@ -1084,6 +1107,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
       braco: merge(bracoGeoms()),
       haste: merge(hasteGeoms()),
       tampa: merge(tampaGeoms()),
+      chave: merge(chaveGeoms()),
       placa: merge(placaGeoms()),
       espelho: extrude(shapeFrom(hexPts(P.ESPELHO_FACES)), 0, P.ESPELHO_ESP, 6),
       rotula: new THREE.SphereGeometry(3.4, 20, 14)
@@ -1144,7 +1168,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
   const selMat = new THREE.MeshStandardMaterial({ color: 0x6fb6f2, emissive: 0x1f6fb5, emissiveIntensity: 0.35, roughness: 0.5 });
 
   let modules = [];
-  const PART_OF = { chassi: "chassi", tampa: "tampa_servo", braco: "braco_trelica", haste: "haste", placa: "placa_espelho", servo: "servo", espelho: "espelho", rotula: "rotula" };
+  const PART_OF = { chassi: "chassi", tampa: "tampa_servo", braco: "braco_trelica", haste: "haste", placa: "placa_espelho", chave: "chave_uniao", servo: "servo", espelho: "espelho", rotula: "rotula" };
   function mesh(kind) { const m = new THREE.Mesh(GEO[kind], materials[kind]); m.userData.kind = kind; return m; }
 
   function buildModule() {
@@ -1237,16 +1261,16 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     const lbl = document.getElementById("labels"); if (lbl) lbl.innerHTML = "";
     if (typeof renderWallEditor === "function") renderWallEditor();
     if (typeof liveLayout === "function") liveLayout();
-    // parafusos M4 entre módulos vizinhos
+    // chaves de união impressas entre módulos vizinhos (2 por lado encostado)
     const keyOf = (q, r) => q + "," + r, idx = new Map(modules.map((m, i) => [keyOf(m.pos[2], m.pos[3]), i]));
     const dirs = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
     modules.forEach((m, i) => dirs.forEach(([dq, dr], k) => {
       const j = idx.get(keyOf(m.pos[2] + dq, m.pos[3] + dr));
       if (j === undefined || j < i) return;
       const a = 60 * k * DEG, n = [Math.cos(a), Math.sin(a)], td = [-Math.sin(a), Math.cos(a)], D = derived();
-      for (const t of [-60, 60]) for (const z of [P.PAREDE_ALT * 0.3, P.PAREDE_ALT * 0.76]) {
-        const b = TPL.parafuso_m4.clone();
-        b.position.set(n[0] * D.APO + td[0] * t, n[1] * D.APO + td[1] * t, z); b.rotation.z = a;
+      for (const t of [-CH.POS, CH.POS]) {
+        const b = mesh("chave");
+        b.position.set(n[0] * D.APO + td[0] * t, n[1] * D.APO + td[1] * t, P.PAREDE_ALT - CH.ALT); b.rotation.z = a;
         m.layers.base.add(b);
       }
     }));
@@ -1365,7 +1389,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     placa: () => ({ t: "Placa do espelho", m: `${P.ESPELHO_FACES - 2 * P.PLACA_RECUO} mm entre faces · rótulas em R ${P.R_P} mm<br>1 por módulo · face lisa na mesa` }),
     servo: () => ({ t: "Servo STS3215 12 V", m: `IDs 1, 2 e 3 · barramento serial 1 Mbps<br>eixo a ${fmt(Math.hypot(...legFrame(P, 0).S), 0)} mm do centro, z ${P.Z_B} mm · plano do braço girado ${P.BETA}°` }),
     espelho: () => ({ t: "Espelho acrílico", m: `${P.ESPELHO_FACES} mm entre faces · ${P.ESPELHO_ESP} mm · corte a laser<br>colar com fita VHB ou silicone neutro` }),
-    rotula: () => ({ t: "Rótula RC M3", m: `esfera + copo plástico · trabalha até ~27°` })
+    rotula: () => ({ t: "Rótula RC M3", m: `esfera + copo plástico · trabalha até ~32°` }),
+    chave: () => ({ t: "Chave de união", m: `gravata borboleta impressa · desce por cima nos rasgos de dois módulos vizinhos e trava os dois sem parafuso<br>2 por lado encostado · PETG, em pé com a aba na mesa · para tirar, puxe pela aba` })
   };
   function countKind(kind) {
     let n = 0;
@@ -1393,7 +1418,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
   function selectKind(kind) {
     let found = null;
     world.traverse(o => { if (!found && o.isMesh && o.userData.kind === kind) found = o; });
-    if (!found) { toast(kind === "parafuso_m4" ? "Aparece na vista Parede 7 ou Parede 19" : "Esse item não aparece no 3D"); return; }
+    if (!found) { toast("Esse item não aparece no 3D"); return; }
     if (found.userData.hw && !showHW) { showHW = true; $("#b-hw").setAttribute("aria-pressed", "true"); applyLayers(); }
     select(found);
   }
@@ -1559,7 +1584,6 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
     ["Parafusos do disco do servo", perMod(15), "ali", 0, "USD", "vêm com o servo", "parafuso_disco", [ali("m2 screw kit")]],
     ["Conector XT30 (par)", perMod(2), "ali", 0.35, "USD", "lotes de 10 pares", "xt30", [ali("xt30 connector"), ml("conector xt30 par")]],
     ["Fusível 5 A + porta-fusível de linha", perMod(1), "ali", 0.6, "USD", "", "fusivel", [ali("inline blade fuse holder"), ml("porta fusivel de linha lamina")]],
-    ["Parafuso M4 × 12 + porca", perMod(12), "ali", 0.1, "USD", "união com vizinhos (média)", "parafuso_m4", [ali("m4x12 socket screw"), ml("parafuso allen m4 x 12 inox")]],
     ["Adaptador USB-serial 3,3 V (CP2102)", () => 1, "ali", 2, "USD", "para gravar o WT32; só 1", "", [ali("cp2102 usb ttl"), ml("conversor usb serial cp2102")]],
     ["Espelho acrílico 3 mm, hexágono 250 mm", perMod(1), "br", 22, "BRL", "corte a laser em serviço local", "espelho", [ml("acrilico espelhado 3mm"), ml("corte a laser acrilico")]],
     ["Filamento PETG (kg)", n => Math.ceil(n * 0.45), "br", 100, "BRL", "~0,45 kg por módulo", "", [ml("filamento petg 1kg"), ali("petg filament 1kg")]],
@@ -1693,6 +1717,7 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
     if (id === "braco_trelica") add(bracoGeoms());
     if (id === "haste") add(hasteGeoms());
     if (id === "tampa_servo") add(tampaGeoms());
+    if (id === "chave_uniao") add(chaveGeoms().map(gg => { gg.rotateX(Math.PI); gg.translate(0, 0, CH.ALT + CH.ABA); return gg; }));
     g.updateMatrixWorld(true);
     return g;
   }

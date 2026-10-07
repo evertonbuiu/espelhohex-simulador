@@ -1,16 +1,16 @@
 {
-  "versao": "2.6",
-  "notas": "Servos girados 30° para a periferia: braço de 115 mm e haste de 70 mm, switch no centro do módulo e nova distribuição da eletrônica.",
+  "versao": "2.7",
+  "notas": "Módulos unidos por chaves impressas em gravata borboleta (sem parafusos M4).",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "9969141ba5bd261b1f1ae5dce84769a3d37bdb39ce1cdc37b1b2a4a1de152aaf",
+      "sha256": "5794e8abf0b20690991f7623c767545c2bcbf3708ece7022e9d0b47abed9a8da",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "9f170616877002aea29c4e4ae3021b5129bfe478a9a7fb0fda2fee354bbd3a9d",
-      "tamanho": 122665
+      "sha256": "e0224125690f6cf4798f6d17bae48707dd40a48acc86b79095585904021ad679",
+      "tamanho": 124716
     }
   }
 }
