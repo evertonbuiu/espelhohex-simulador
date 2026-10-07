@@ -1,16 +1,16 @@
 {
-  "versao": "2.4",
-  "notas": "Links de compra voltaram a ser buscas no Mercado Livre e no AliExpress.",
+  "versao": "2.5",
+  "notas": "Espelho de 250 mm: nova mecânica (braço 70 mm, haste 60 mm, passo 266 mm) e eletrônica reposicionada.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "7b06b54020d43fd896608d1ace0ce147c5544f1fb9d04bf5007b6997d5e5f206",
+      "sha256": "4aea486c0862d23a2c61153112e45b524af52d58b31fd0e6b04d526ed437e859",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "3ffc1aaae05ab6ad3898f370198861860fd75697134577f3bb58322526ae3faa",
-      "tamanho": 121761
+      "sha256": "609ee44697c5c85b913c01c3d56812eabef1f1198efcfda3de6ce8ce6e7f0973",
+      "tamanho": 121886
     }
   }
 }

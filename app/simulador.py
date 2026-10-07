@@ -39,7 +39,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 ARTNET_PORT = 6454
 TILT_MAX = 25.0
 PISTON_MAX = 40.0
-APP_VERSION = "2.4"
+APP_VERSION = "2.5"
 VERSION = "EspelhoHex sim " + APP_VERSION
 PAGE = "espelho-hex-cad.html"
 HERE = os.path.dirname(os.path.abspath(__file__))

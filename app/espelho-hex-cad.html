@@ -410,8 +410,8 @@ WT32-ETH01        Adaptador half-duplex      Servos em série
 const DEG = Math.PI / 180;
 const LEGS = [90, 210, 330];
 const DEFAULTS = {
-  ESPELHO_FACES: 300, ESPELHO_ESP: 3, PASSO: 320,
-  R_P: 135, Z_C: 135, R_B: 35, Z_B: 70, BRACO: 100, HASTE: 65,
+  ESPELHO_FACES: 250, ESPELHO_ESP: 3, PASSO: 266,
+  R_P: 105, Z_C: 120, R_B: 35, Z_B: 60, BRACO: 70, HASTE: 60,
   TILT_MAX: 25, PISTON_MAX: 40, PHI_MAX: 50,
   BASE_ESP: 3, PAREDE_ESP: 3, PAREDE_ALT: 50,
   SERVO_C: 45.2, SERVO_L: 24.7, SERVO_A: 35, SERVO_EIXO: 12, SERVO_FACE_DISCO: 6,
@@ -554,8 +554,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
 
   // ---------- parâmetros (com memória local deste navegador) ----------
   let P = { ...DEFAULTS };
-  try { const s = JSON.parse(localStorage.getItem("espelhohex-params") || "null"); if (s) P = { ...DEFAULTS, ...s }; } catch (e) { /* sem armazenamento */ }
-  const saveParams = () => { try { localStorage.setItem("espelhohex-params", JSON.stringify(P)); } catch (e) { /* ignora */ } };
+  try { const s = JSON.parse(localStorage.getItem("espelhohex-params-250") || "null"); if (s) P = { ...DEFAULTS, ...s }; } catch (e) { /* sem armazenamento */ }
+  const saveParams = () => { try { localStorage.setItem("espelhohex-params-250", JSON.stringify(P)); } catch (e) { /* ignora */ } };
 
   const PARAM_GROUPS = [
     ["Espelho e módulo", [
@@ -641,12 +641,15 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
   }
 
   // eletrônica: [ângulo, raio, meio-comprimento p/ abraçadeira, meia-largura, raio livre de furos]
-  const ELEC = { wt32: [30, 95, 16, 18, 42], ls1005: [270, 124, 30, 30, 54], adaptador: [150, 92, 16, 18, 40], mp1584: [150, 128, 10, 13, 24] };
+  // [ângulo, raio, meio-comp. e meia-larg. dos rasgos, raio livre de furos, giro da placa] — conferido contra berços, braços e paredes
+  // o switch fica encostado na parede de 240°, com as portas viradas para ela
+  const ELEC = { wt32: [28, 100, 19, 15, 34, 118], ls1005: [260, 88, 30, 26, 50, 150], adaptador: [138, 94, 10, 14, 24, 228], mp1584: [138, 120, 7, 11.5, 17, 228] };
+  const PARAF_ANG = [48, 168, 288], PARAF_R = 119;
 
   // ---------- chassi ----------
   function chassiGeoms() {
     const D = derived(), out = [];
-    const PARAF_ANG = [0, 120, 240], PARAF_R = Math.min(140, D.APO - 18), PLACAS = Object.values(ELEC);
+    const PLACAS = Object.values(ELEC);
     // base com furos
     const base = shapeFrom(hexPts(P.PASSO));
     const emPerna = (x, y) => LEGS.some(a => { const c = Math.cos(a * DEG), s = Math.sin(a * DEG), lx = x * c + y * s, ly = -x * s + y * c; return lx > 8 && lx < 62 && ly > -70 && ly < 0; });
@@ -658,8 +661,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
       base.holes.push(pathFrom([0, 1, 2, 3, 4, 5].map(k => [x + 9 * Math.cos(k * 60 * DEG), y + 9 * Math.sin(k * 60 * DEG)]).reverse()));
     }
     for (const a of PARAF_ANG) base.holes.push(circlePath(PARAF_R * Math.cos(a * DEG), PARAF_R * Math.sin(a * DEG), 2.5));
-    for (const [a, pr, hx, hy] of PLACAS) {
-      const cx = pr * Math.cos(a * DEG), cy = pr * Math.sin(a * DEG), t = (a + 90) * DEG;
+    for (const [a, pr, hx, hy, , rot] of PLACAS) {
+      const cx = pr * Math.cos(a * DEG), cy = pr * Math.sin(a * DEG), t = rot * DEG;
       for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
         const px = sx * hx, py = sy * hy;
         const c = [cx + px * Math.cos(t) - py * Math.sin(t), cy + px * Math.sin(t) + py * Math.cos(t)];
@@ -896,8 +899,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
     fusivel: ["Porta-fusível de linha 5 A", "1 por módulo · na entrada de 12 V."],
     cabo_12v: ["Cabo 12 V (vermelho/preto)", "fio 1,5 mm² no barramento entre módulos; 0,5 mm² dentro do módulo."],
     cabo_bus: ["Cabo do barramento dos servos", "3 vias, vem com o servo · liga adaptador → servo → servo → servo."],
-    cabo_rede: ["Cabos de rede", "azul: entrada (do módulo anterior ou do computador, pela passagem de 300°) e o curto até o WT32 · verde: saída para o próximo módulo (passagem de 240°). Cat5e, 30 a 50 cm."],
-    ls1005: ["Switch TP-Link LS1005", "1 por módulo · 5 portas 10/100 · 83,6 × 45,7 × 22,8 mm · 5 V 0,6 A pelo MP1584 · portas viradas para o centro. Qualquer porta serve: uma para a entrada, uma para a saída e uma para o WT32."],
+    cabo_rede: ["Cabos de rede", "azul: entrada (do módulo anterior ou do computador, pela passagem de 240°) e o curto até o WT32 · verde: saída para o próximo módulo (passagem de 300°). Cat5e, 30 a 50 cm."],
+    ls1005: ["Switch TP-Link LS1005", "1 por módulo · 5 portas 10/100 · 83,6 × 45,7 × 22,8 mm · 5 V 0,6 A pelo MP1584 · encostado na parede de 240°, portas viradas para ela. Qualquer porta serve: uma para a entrada, uma para a saída e uma para o WT32."],
     parafuso_fixacao: ["Parafuso de fixação na parede", "3 por módulo · Ø 4 a 4,5 mm, com bucha ou direto no painel."],
     parafuso_m4: ["Parafuso M4 × 12 + porca", "4 por lado encostado · une os chassis vizinhos pelos furos das paredes."]
   };
@@ -988,7 +991,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
       [box(-11, -8.5, 2, 11, 8.5, 3.2), "pcbBlue"], [box(-4, -3.5, 3.2, 3, 3.5, 7.2), "inductor"],
       [box(5, -3, 3.2, 9.5, 2, 7), "trim"], [box(-9, 3, 3.2, -6, 6, 4.2), "chip"]
     ]);
-    // TP-Link LS1005: 83,6 × 45,7 × 22,8 mm, portas viradas para o centro (+y local)
+    // TP-Link LS1005: 83,6 × 45,7 × 22,8 mm, portas no lado +y local
     const lsParts = [[box(-41.8, -22.85, 2, 41.8, 22.85, 24.8), "whitePlastic"]];
     for (let i = 0; i < 5; i++) {
       const x = -30 + i * 13.5;
@@ -1008,13 +1011,13 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
 
   // posições da eletrônica no módulo
   function elecPlace(kind) {
-    const [deg, r] = ELEC[kind], a = deg * DEG, g = TPL[kind].clone();
+    const [deg, r, , , , rot] = ELEC[kind], a = deg * DEG, g = TPL[kind].clone();
     g.position.set(r * Math.cos(a), r * Math.sin(a), 0);
-    g.rotation.z = a + Math.PI / 2;
+    g.rotation.z = rot * DEG;
     return g;
   }
   function localToModule(kind, x, y, z) {
-    const [deg, r] = ELEC[kind], a = deg * DEG + Math.PI / 2, c = [r * Math.cos(deg * DEG), r * Math.sin(deg * DEG)];
+    const [deg, r, , , , rot] = ELEC[kind], a = rot * DEG, c = [r * Math.cos(deg * DEG), r * Math.sin(deg * DEG)];
     return new THREE.Vector3(c[0] + x * Math.cos(a) - y * Math.sin(a), c[1] + x * Math.sin(a) + y * Math.cos(a), z);
   }
   const polar = (r, deg, z) => new THREE.Vector3(r * Math.cos(deg * DEG), r * Math.sin(deg * DEG), z);
@@ -1030,26 +1033,21 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
 
   function buildCables() {
     const D = derived(), g = new THREE.Group(), apo = D.APO - P.PAREDE_ESP;
-    const inX = new THREE.Vector3(-(apo - 10), 0, 6), outX = polar(apo - 10, 240, 6);
-    const fuse = polar(apo - 42, 180, 6);
+    const inX = polar(apo - 9, 180, 6), outX = polar(apo - 9, 120, 6);
+    const fuse = polar(101, 175, 6), ft = polar(14, 265, 0);
+    const f0 = fuse.clone().sub(ft), f1 = fuse.clone().add(ft);
     const adPow = localToModule("adaptador", 10, 0, 6), mpIn = localToModule("mp1584", -8, 0, 4), mpOut = localToModule("mp1584", 8, 0, 4);
     const pair = (pts, off) => pts.map(p => p.clone().add(new THREE.Vector3(0, 0, off)));
-    const f0 = fuse.clone().add(new THREE.Vector3(-14, 0, 0)), f1 = fuse.clone().add(new THREE.Vector3(14, 0, 0));
-    // 12 V: entrada → fusível → adaptador e MP1584; saída para o vizinho cruzando a perna de 210° perto do centro
-    const runs12 = [
-      [inX, f0],
-      [f1, polar(96, 172, 6), adPow],
-      [f1, polar(112, 165, 6), mpIn],
-      [f1, polar(92, 190, 6), polar(76, 210, 6), polar(96, 230, 6), outX]
-    ];
+    // 12 V: entrada (180°) → fusível → adaptador e MP1584 → saída para o vizinho (120°), tudo no setor de 150°
+    const runs12 = [[inX, f0], [f1, adPow], [f1, mpIn], [f1, polar(112, 150, 6), outX]];
     for (const pts of runs12) {
       g.add(cable("cabo_12v", pair(pts, 0), 1.3, "cableRed"));
       g.add(cable("cabo_12v", pair(pts, 2.8), 1.3, "cableBlack"));
     }
-    // 5 V: MP1584 → WT32 (cruza a perna de 90° a r 78) e → switch (cruza a de 210° a r 80)
+    // 5 V: MP1584 → WT32 (cruza a perna de 90° a r 66) e → switch (cruza a de 210° a r 66), onde o braço passa alto
     const wtPow = localToModule("wt32", 20, 12, 4), lsPow = localToModule("ls1005", 37.5, 27, 12);
-    const p5a = [mpOut, polar(100, 125, 4), polar(78, 90, 4), polar(88, 55, 4), wtPow];
-    const p5b = [mpOut, polar(104, 170, 4), polar(80, 210, 4), polar(92, 245, 4), lsPow];
+    const p5a = [mpOut, polar(100, 120, 4), polar(66, 90, 4), polar(80, 55, 4), wtPow];
+    const p5b = [mpOut, polar(100, 165, 4), polar(66, 210, 4), polar(85, 228, 4), lsPow];
     for (const pts of [p5a, p5b]) {
       g.add(cable("cabo_12v", pts, 0.8, "cableRed"));
       g.add(cable("cabo_12v", pair(pts, 1.8), 0.8, "cableBlack"));
@@ -1060,12 +1058,12 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
     g.add(cable("cabo_bus", [adBus, polar(70, 130, 8), polar(40, 112, 12), con(90, -5.5)], 1.6, "cableBus"));
     g.add(cable("cabo_bus", [con(90, 5.5), polar(34, 40, 14), polar(40, 0, 14), polar(34, 330, 14), con(330, -5.5)], 1.6, "cableBus"));
     g.add(cable("cabo_bus", [con(330, 5.5), polar(36, 280, 14), polar(40, 250, 14), polar(34, 225, 14), con(210, -5.5)], 1.6, "cableBus"));
-    // rede: switch interno · azul = entrada (passagem a 300°) e WT32 · verde = saída (passagem a 240°)
+    // rede: portas do switch viradas para a parede de 240° · azul = entrada (passagem de 240°) · verde = saída (passagem de 300°)
     const port = (i, d) => localToModule("ls1005", -30 + i * 13.5, 23 + d, 11);
-    g.add(cable("cabo_rede", [port(4, 0), port(4, 22), localToModule("ls1005", 54, 26, 10), localToModule("ls1005", 54, -6, 9), polar(apo - 10, 296, 9), polar(D.APO + 30, 300, 9)], 2.6, "cableBlue"));
-    g.add(cable("cabo_rede", [port(0, 0), port(0, 22), localToModule("ls1005", -54, 26, 10), localToModule("ls1005", -54, -6, 9), polar(apo - 10, 244, 9), polar(D.APO + 30, 240, 9)], 2.6, "cableGreen"));
+    g.add(cable("cabo_rede", [port(4, 0), port(4, 18), localToModule("ls1005", 30, 40, 9), polar(D.APO + 30, 240, 9)], 2.6, "cableBlue"));
+    g.add(cable("cabo_rede", [port(0, 0), port(0, 18), localToModule("ls1005", -47, 28, 10), localToModule("ls1005", -55, 5, 9), polar(apo - 8, 298, 9), polar(D.APO + 30, 300, 9)], 2.6, "cableGreen"));
     const rj = localToModule("wt32", -31, 0, 9);
-    g.add(cable("cabo_rede", [port(2, 0), port(2, 24), polar(92, 300, 7), polar(96, 335, 7), localToModule("wt32", -44, 4, 8), rj], 2.3, "cableBlue"));
+    g.add(cable("cabo_rede", [port(2, 0), port(2, 18), localToModule("ls1005", -46, 30, 9), localToModule("ls1005", -50, -30, 8), polar(66, 330, 8), localToModule("wt32", -44, 0, 8), rj], 2.3, "cableBlue"));
     return g;
   }
 
@@ -1177,10 +1175,10 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, inverse, solveCl
     // eletrônica, conectores, fusível, cabos e parafusos de fixação
     const apo = D.APO - P.PAREDE_ESP;
     ["wt32", "ls1005", "adaptador", "mp1584"].forEach(k => layers.base.add(elecPlace(k)));
-    layers.base.add(placeStatic("xt30", polar(apo - 10, 180, 2), Math.PI));
-    layers.base.add(placeStatic("xt30", polar(apo - 10, 240, 2), 240 * DEG));
-    layers.base.add(placeStatic("fusivel", polar(apo - 42, 180, 6)));
-    [0, 120, 240].forEach(a => layers.base.add(placeStatic("parafuso_fixacao", polar(Math.min(140, D.APO - 18), a, 0))));
+    layers.base.add(placeStatic("xt30", polar(apo - 9, 180, 2), Math.PI));
+    layers.base.add(placeStatic("xt30", polar(apo - 9, 120, 2), 120 * DEG));
+    layers.base.add(placeStatic("fusivel", polar(101, 175, 6), 265 * DEG));
+    PARAF_ANG.forEach(a => layers.base.add(placeStatic("parafuso_fixacao", polar(PARAF_R, a, 0))));
     layers.base.add(TPL.cables.clone());
     layers.top.add(plate);
     return { root, layers, arms, rods, plate, mirror: mir, last: null };
@@ -1556,18 +1554,18 @@ static const float PHI_MAX_DEG  = ${f(P.PHI_MAX)};`;
     ["Fusível 5 A + porta-fusível de linha", perMod(1), "ali", 0.6, "USD", "", "fusivel", [ali("inline blade fuse holder"), ml("porta fusivel de linha lamina")]],
     ["Parafuso M4 × 12 + porca", perMod(12), "ali", 0.1, "USD", "união com vizinhos (média)", "parafuso_m4", [ali("m4x12 socket screw"), ml("parafuso allen m4 x 12 inox")]],
     ["Adaptador USB-serial 3,3 V (CP2102)", () => 1, "ali", 2, "USD", "para gravar o WT32; só 1", "", [ali("cp2102 usb ttl"), ml("conversor usb serial cp2102")]],
-    ["Espelho acrílico 3 mm, hexágono 300 mm", perMod(1), "br", 30, "BRL", "corte a laser em serviço local", "espelho", [ml("acrilico espelhado 3mm"), ml("corte a laser acrilico")]],
-    ["Filamento PETG (kg)", n => Math.ceil(n * 0.62), "br", 100, "BRL", "~0,62 kg por módulo", "", [ml("filamento petg 1kg"), ali("petg filament 1kg")]],
+    ["Espelho acrílico 3 mm, hexágono 250 mm", perMod(1), "br", 22, "BRL", "corte a laser em serviço local", "espelho", [ml("acrilico espelhado 3mm"), ml("corte a laser acrilico")]],
+    ["Filamento PETG (kg)", n => Math.ceil(n * 0.45), "br", 100, "BRL", "~0,45 kg por módulo", "", [ml("filamento petg 1kg"), ali("petg filament 1kg")]],
     ["Fonte chaveada 12 V 30 A", n => Math.ceil(n * 2 / 30), "br", 150, "BRL", "~2 A por módulo", "", [ml("fonte chaveada 12v 30a"), ali("12v 30a power supply")]],
     ["Switch de rede 5 portas (dentro do módulo)", perMod(1), "br", 60, "BRL", "ex.: TP-Link LS1005; entrada e saída de rede", "ls1005", [ml("switch 5 portas tp-link ls1005"), ali("5 port ethernet switch")]],
     ["Plugue P4 macho com rabicho", perMod(1), "br", 3, "BRL", "liga o switch nos 5 V do MP1584", "", [ml("plug p4 macho com rabicho"), ali("dc 5.5x2.1 male pigtail")]],
-    ["Cabo 12 V 1,5 mm² (m)", n => Math.ceil(n * 0.6), "br", 4, "BRL", "vermelho + preto", "cabo_12v", [ml("cabo paralelo 1,5mm vermelho preto")]],
+    ["Cabo 12 V 1,5 mm² (m)", n => Math.ceil(n * 0.5), "br", 4, "BRL", "vermelho + preto", "cabo_12v", [ml("cabo paralelo 1,5mm vermelho preto")]],
     ["Cabo de rede Cat5e 30–50 cm", perMod(2), "br", 7, "BRL", "um até o WT32, um até o próximo módulo", "cabo_rede", [ml("cabo de rede cat5e 50cm"), ali("cat6 patch cable 0.5m")]],
     ["Parafuso de fixação com bucha", perMod(3), "br", 0.5, "BRL", "", "parafuso_fixacao", [ml("parafuso bucha 6 kit")]]
   ];
   const DEFAULT_PRICES = BOM.map(r => r[3]);
-  try { const sp = JSON.parse(localStorage.getItem("espelhohex-precos-v3") || "null"); if (sp && sp.length === BOM.length) sp.forEach((v, i) => { if (isFinite(v)) BOM[i][3] = v; }); } catch (e) { /* ignora */ }
-  const savePrices = () => { try { localStorage.setItem("espelhohex-precos-v3", JSON.stringify(BOM.map(r => r[3]))); } catch (e) { /* ignora */ } };
+  try { const sp = JSON.parse(localStorage.getItem("espelhohex-precos-v4") || "null"); if (sp && sp.length === BOM.length) sp.forEach((v, i) => { if (isFinite(v)) BOM[i][3] = v; }); } catch (e) { /* ignora */ }
+  const savePrices = () => { try { localStorage.setItem("espelhohex-precos-v4", JSON.stringify(BOM.map(r => r[3]))); } catch (e) { /* ignora */ } };
   const links = arr => arr.map(x => `<a href="${x.u}" target="_blank" rel="noopener">${x.l}</a>`).join(" · ");
   const brl = v => "R$ " + v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
