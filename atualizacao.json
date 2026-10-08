@@ -1,16 +1,16 @@
 {
-  "versao": "3.0",
-  "notas": "Módulo menor: chassi de 250 mm de ponta a ponta (216,5 entre faces), espelho de 200 mm, braço de 90 mm e haste de 70 mm, uma chave de união por lado.",
+  "versao": "3.1",
+  "notas": "Servos no alto de colunas em treliça, como no original: braço de 70 mm, haste de 60 mm, módulo de 173 mm de profundidade.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "b877a6d09a6c711b06b215d2b8a2647f0dff091d08e22ba07af1f3b95395b710",
+      "sha256": "b15e843a7e2aca1a4ef4e3db683f9737ccc290448fba18673a9780b0f1f88b03",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "f15ee2e55735ff0a425a5bde7f501f1f1445c0fe5ee78abeff7ead40e42adbb0",
-      "tamanho": 130408
+      "sha256": "31601c034be582671f7aa12ceb3a6f2fcf5578e34865473cf0c03b48d2e0a38c",
+      "tamanho": 131664
     }
   }
 }
