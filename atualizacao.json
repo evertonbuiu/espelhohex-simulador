@@ -1,16 +1,16 @@
 {
-  "versao": "3.2",
-  "notas": "Servo no meio de dois braços em treliça (placas laterais), frente e trás abertas, como no original.",
+  "versao": "3.3",
+  "notas": "Volta ao projeto com os servos nos berços da base (igual à versão 3.0).",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "bea0a2650517a4ec73c62a2cbef8eada98d89e0d3fbf768dee65bb8b6143a30b",
+      "sha256": "a5059113d336fd497547d2976bbbcec733b493e9f19751301526b1afe4208972",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "96fd962afb7e264b8e7154b4b476895e766f2133a111618f15cefe6a43fb1797",
-      "tamanho": 131405
+      "sha256": "f15ee2e55735ff0a425a5bde7f501f1f1445c0fe5ee78abeff7ead40e42adbb0",
+      "tamanho": 130408
     }
   }
 }
