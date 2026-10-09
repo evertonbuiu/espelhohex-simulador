@@ -418,7 +418,7 @@ const DEFAULTS = {
   BRACO_ESP: 8, BRACO_RAIZ: 30, BRACO_PONTA: 12, DISCO_FURO_R: 7, DISCO_FURO_D: 2.6, DISCO_N_FUROS: 4,
   HASTE_ESP: 6, COPO_CENTRO: 18,
   PLACA_RECUO: 5, PLACA_ESP: 2, NERVURA: 6, PLACA_Z: 10,
-  FOLGA: 0.3, BERCO_PAREDE: 3
+  FOLGA: 0.3, BERCO_PAREDE: 4
 };
 
 function rotation(yaw, ax, ay) {
@@ -564,8 +564,8 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
 
   // ---------- parâmetros (com memória local deste navegador) ----------
   let P = { ...DEFAULTS };
-  try { const s = JSON.parse(localStorage.getItem("espelhohex-params-v31") || "null"); if (s) P = { ...DEFAULTS, ...s }; } catch (e) { /* sem armazenamento */ }
-  const saveParams = () => { try { localStorage.setItem("espelhohex-params-v31", JSON.stringify(P)); } catch (e) { /* ignora */ } };
+  try { const s = JSON.parse(localStorage.getItem("espelhohex-params-v32") || "null"); if (s) P = { ...DEFAULTS, ...s }; } catch (e) { /* sem armazenamento */ }
+  const saveParams = () => { try { localStorage.setItem("espelhohex-params-v32", JSON.stringify(P)); } catch (e) { /* ignora */ } };
 
   const PARAM_GROUPS = [
     ["Espelho e módulo", [
@@ -742,51 +742,43 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
     return out;
   }
 
+  // Coluna do servo como no original: DOIS braços em treliça (placas laterais) que sobem da base e
+  // seguram o servo no meio deles, no alto. Frente e trás ficam abertas (só duas travessas).
   function bercoGeoms() {
     const D = derived(), F = P.FOLGA, W = P.BERCO_PAREDE;
     const px0 = -P.SERVO_L / 2 - F, px1 = P.SERVO_L / 2 + F;
     const xo0 = px0 - W, xo1 = px1 + W;
-    const py0 = D.FS - P.SERVO_A - F, py1 = D.FS, yo0 = py0 - W, yo1 = D.FS + 2;
+    const py0 = D.FS - P.SERVO_A - F, yo0 = py0 - 3, yo1 = D.FS + 2;
     const zf = D.ZBOT - F, zt = D.ZTOP, g = [];
-    // coluna em treliça (como no original): o servo fica no alto, preso entre as placas laterais.
-    // pé de 4 mm, prateleira de 4 mm embaixo do servo e 4 faces em treliça entre elas
     const zc0 = 4, zc1 = zf - 4;
+    const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
+    // pé (une os dois braços na base) e apoio embaixo do servo
     g.push(box(xo0, yo0, 0, xo1, yo1, zc0));
-    g.push(box(xo0, yo0, zc1, xo1, yo1, zf));
-    if (zc1 - zc0 > 8) {
-      const panel = (u0, u1) => {
-        const sh = shapeFrom(rectPts(u0, zc0, u1, zc1)), n = Math.max(1, Math.round((zc1 - zc0) / (u1 - u0))), h = (zc1 - zc0) / n;
+    g.push(box(xo0, yo0, zc1, px0 + 2, yo1, zf)); g.push(box(px1 - 2, yo0, zc1, xo1, yo1, zf));
+    g.push(box(px0, yo0, zc1, px1, py0 + 6, zf)); g.push(box(px0, yo1 - 6, zc1, px1, yo1, zf));
+    const panel = (u0, u1, z0, z1, holes) => {
+      const sh = shapeFrom(rectPts(u0, z0, u1, z1));
+      if (holes) {
+        const n = Math.max(1, Math.round((z1 - z0) / (u1 - u0))), h = (z1 - z0) / n;
         for (let k = 0; k < n; k++) {
-          const a = zc0 + k * h, b = a + h;
+          const a = z0 + k * h, b = a + h;
           const tris = k % 2 ? [[[u0, a], [u1, a], [u1, b]], [[u0, a], [u1, b], [u0, b]]] : [[[u0, a], [u1, a], [u0, b]], [[u1, a], [u1, b], [u0, b]]];
           for (const [A, B, C] of tris) { const t = insetTri(A, B, C, 2.6); if (t) sh.holes.push(pathFrom(area2(t) > 0 ? t.slice().reverse() : t)); }
         }
-        return sh;
-      };
-      const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
-      for (const x0 of [xo0, px1]) {                                   // laterais (plano y-z)
-        const e = extrude(panel(yo0, yo1), 0, W, 8); e.applyMatrix4(new THREE.Matrix4().makeBasis(Y, Z, X).setPosition(x0, 0, 0)); g.push(e);
       }
-      for (const [y0, d] of [[py0, W], [yo1, 3]]) {                    // trás e frente (plano x-z)
-        const e = extrude(panel(px0, px1), 0, d, 8); e.applyMatrix4(new THREE.Matrix4().makeBasis(X, Z, Y.clone().negate()).setPosition(0, y0, 0)); g.push(e);
-      }
+      return sh;
+    };
+    for (const x0 of [xo0, px1]) {
+      // braço em treliça embaixo do servo
+      if (zc1 - zc0 > 8) { const e = extrude(panel(yo0, yo1, zc0, zc1, true), 0, W, 8); e.applyMatrix4(new THREE.Matrix4().makeBasis(Y, Z, X).setPosition(x0, 0, 0)); g.push(e); }
+      // placa lateral na altura do servo, com 2 furos para os parafusos do servo
+      const up = panel(yo0, yo1, zf, zt, false);
+      for (const zz of [D.ZBOT + 10, D.ZTOP - 14]) up.holes.push(circlePath(D.FS - P.SERVO_A / 2, zz, 1.2));
+      const e = extrude(up, 0, W, 20); e.applyMatrix4(new THREE.Matrix4().makeBasis(Y, Z, X).setPosition(x0, 0, 0)); g.push(e);
     }
-    const holeY = D.FS - P.SERVO_A / 2;
-    for (const [x0, x1] of [[xo0, px0], [px1, xo1]]) {           // laterais com furo da tampa
-      const s = shapeFrom(rectPts(x0, yo0, x1, yo1));
-      s.holes.push(circlePath((x0 + x1) / 2, holeY, 1.3));
-      g.push(extrude(s, zf, zt - zf, 20));
-    }
-    // parede de trás com janela para os cabos
-    const wx0 = -8, wx1 = 8, wz0 = D.ZBOT + 3, wz1 = D.ZBOT + 17;
-    g.push(box(px0, yo0, zf, wx0, py0, zt));
-    g.push(box(wx1, yo0, zf, px1, py0, zt));
-    g.push(box(wx0, yo0, zf, wx1, py0, wz0));
-    g.push(box(wx0, yo0, wz1, wx1, py0, zt));
-    // abas da frente e faixa de baixo
-    g.push(box(px0, py1, zf, px0 + 1.5 + F, yo1, zt));
-    g.push(box(px1 - 1.5 - F, py1, zf, px1, yo1, zt));
-    g.push(box(px0 + 1.5 + F, py1, zf, px1 - 1.5 - F, yo1, D.ZBOT + 4));
+    // travessas na frente e atrás (o meio fica aberto: o servo aparece entre os dois braços)
+    const zm = (zc0 + zc1) / 2;
+    for (const [y0, y1] of [[yo0, yo0 + 3], [yo1 - 3, yo1]]) g.push(box(px0, y0, zm - 2, px1, y1, zm + 2));
     return g;
   }
 
@@ -801,7 +793,7 @@ if (typeof module !== "undefined") module.exports = { DEFAULTS, legFrame, invers
 
   // ---------- tampa do servo ----------
   function tampaGeoms() {
-    const w = P.SERVO_L + 2 * (P.FOLGA + P.BERCO_PAREDE), d = P.SERVO_A + P.FOLGA + P.BERCO_PAREDE + 2;
+    const w = P.SERVO_L + 2 * (P.FOLGA + P.BERCO_PAREDE), d = P.SERVO_A + P.FOLGA + 5;
     const s = shapeFrom(rectPts(-w / 2, -d / 2, w / 2, d / 2));
     const hx = P.SERVO_L / 2 + P.FOLGA + P.BERCO_PAREDE / 2;
     s.holes.push(circlePath(-hx, 0, 1.65)); s.holes.push(circlePath(hx, 0, 1.65));

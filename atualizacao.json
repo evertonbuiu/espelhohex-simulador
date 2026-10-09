@@ -1,16 +1,16 @@
 {
-  "versao": "3.1",
-  "notas": "Servos no alto de colunas em treliça, como no original: braço de 70 mm, haste de 60 mm, módulo de 173 mm de profundidade.",
+  "versao": "3.2",
+  "notas": "Servo no meio de dois braços em treliça (placas laterais), frente e trás abertas, como no original.",
   "arquivos": {
     "simulador.py": {
       "url": "app/simulador.py",
-      "sha256": "b15e843a7e2aca1a4ef4e3db683f9737ccc290448fba18673a9780b0f1f88b03",
+      "sha256": "bea0a2650517a4ec73c62a2cbef8eada98d89e0d3fbf768dee65bb8b6143a30b",
       "tamanho": 37602
     },
     "espelho-hex-cad.html": {
       "url": "app/espelho-hex-cad.html",
-      "sha256": "31601c034be582671f7aa12ceb3a6f2fcf5578e34865473cf0c03b48d2e0a38c",
-      "tamanho": 131664
+      "sha256": "96fd962afb7e264b8e7154b4b476895e766f2133a111618f15cefe6a43fb1797",
+      "tamanho": 131405
     }
   }
 }
